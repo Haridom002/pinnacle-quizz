@@ -649,12 +649,32 @@ export default function AppPreview() {
     <QuizDetail
       quiz={selectedQuiz}
       onPlay={async () => {
+        // Always generate a code
         let code = Math.floor(100000 + Math.random() * 900000).toString();
         let sid: string | undefined;
+
         if (mockUser) {
+          // Try to create session in Supabase
           const sess = await createGameSession(selectedQuiz.id, mockUser.id);
-          if (sess) { code = sess.code; sid = sess.sessionId; }
+          if (sess) {
+            code = sess.code;
+            sid  = sess.sessionId;
+          } else {
+            // Supabase session creation failed (quiz may be local/sample)
+            // Create a minimal session manually
+            const { data } = await supabase
+              .from('game_sessions')
+              .insert({
+                quiz_id:   selectedQuiz.id.startsWith('sample-') ? selectedQuiz.id : selectedQuiz.id,
+                host_id:   mockUser.id,
+                game_code: code,
+                status:    'waiting',
+              })
+              .select('id').single();
+            if (data) sid = data.id;
+          }
         }
+
         setGameCode(code);
         setSessionId(sid);
         navigate('lobby');

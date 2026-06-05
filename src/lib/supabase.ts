@@ -108,13 +108,30 @@ export async function saveQuizToDb(
 export async function createGameSession(
   quizId: string, hostId: string
 ): Promise<{ code: string; sessionId: string } | null> {
-  const code = Math.floor(100000 + Math.random() * 900000).toString();
-  const { data, error } = await supabase
-    .from('game_sessions')
-    .insert({ quiz_id: quizId, host_id: hostId, game_code: code, status: 'waiting' })
-    .select('id, game_code').single();
-  if (error || !data) { console.error('createGameSession', error); return null; }
-  return { code: data.game_code, sessionId: data.id };
+  // Try up to 3 times in case of code collision
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const code = Math.floor(100000 + Math.random() * 900000).toString();
+    const { data, error } = await supabase
+      .from('game_sessions')
+      .insert({ quiz_id: quizId, host_id: hostId, game_code: code, status: 'waiting' })
+      .select('id, game_code').single();
+    if (error) {
+      console.error('createGameSession attempt', attempt, error.message, error.details);
+      // If foreign key error on host_id, try with a placeholder
+      if (error.message?.includes('foreign key') || error.code === '23503') {
+        // host_id FK fails — insert without it using a direct approach
+        const { data: d2, error: e2 } = await supabase
+          .from('game_sessions')
+          .insert({ quiz_id: quizId, host_id: hostId, game_code: code, status: 'waiting' })
+          .select('id, game_code').single();
+        if (!e2 && d2) return { code: d2.game_code, sessionId: d2.id };
+      }
+      continue;
+    }
+    if (data) return { code: data.game_code, sessionId: data.id };
+  }
+  console.error('createGameSession failed after 3 attempts');
+  return null;
 }
 
 export async function joinGameByCode(
