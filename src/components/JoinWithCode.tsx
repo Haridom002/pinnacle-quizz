@@ -2,7 +2,8 @@ import { useState, useRef, useEffect } from 'react';
 import { soundEngine } from '../utils/soundEngine';
 import { getAvatar, CARTOON_AVATARS } from '../lib/avatars';
 import { MockUser } from '../AppPreview';
-import { supabase, addLobbyPlayer } from '../lib/supabase';
+import { supabase } from '../lib/supabase';
+import { findGame, joinLobby } from '../lib/gameStore';
 
 const HOUSES = [
   { id:'Alpha',  color:'#ef4444', icon:'🔴', bg:'from-red-600 to-red-800',    motto:'Strength & Honor' },
@@ -64,33 +65,23 @@ export default function JoinWithCode({ user, prefillCode = '', onJoined, onBack 
     return () => { supabase.removeChannel(channel); };
   }, [sessionId, step, code, nickname, house, avatarId, onJoined]);
 
-  // ── Step 1: Validate code against Supabase ───────────────────
+  // ── Step 1: Validate code ────────────────────────────────────
   const handleCodeSubmit = async () => {
     const trimmedCode = code.trim();
     if (trimmedCode.length !== 6) { setError('Please enter the full 6-digit code'); return; }
     setError('');
     setJoining(true);
 
-    const { data, error: dbErr } = await supabase
-      .from('game_sessions')
-      .select('id, status, quiz_id')
-      .eq('game_code', trimmedCode)
-      .neq('status', 'completed')
-      .single();
-
+    // findGame checks memory store first then Supabase
+    const result = await findGame(trimmedCode);
     setJoining(false);
 
-    if (dbErr || !data) {
-      setError('❌ Game not found. Check the code and try again.');
+    if (!result) {
+      setError('❌ Game not found. Ask your teacher to check the code.');
       return;
     }
 
-    if (data.status === 'active') {
-      // Game already started — still let them join as late entry
-      setError('⚠️ Game already started, but you can still join!');
-    }
-
-    setSessionId(data.id);
+    setSessionId(result.sessionId);
     soundEngine.click();
     setStep(2);
   };
@@ -103,38 +94,19 @@ export default function JoinWithCode({ user, prefillCode = '', onJoined, onBack 
     setJoining(true);
     soundEngine.joinRoom();
 
-    // Insert player into lobby_players — host sees this instantly via realtime
-    const { error: insertErr } = await supabase
-      .from('lobby_players')
-      .upsert({
-        session_id:   sessionId,
-        player_id:    playerId.current,
-        display_name: nickname.trim(),
-        avatar_id:    avatarId,
-        house:        house,
-        is_host:      false,
-        joined_at:    new Date().toISOString(),
-      }, { onConflict: 'session_id,player_id' });
-
+    // Add to lobby — works via gameStore (memory + Supabase)
+    await joinLobby(sessionId, {
+      playerId:    playerId.current,
+      displayName: nickname.trim(),
+      avatarId,
+      house,
+      isHost:      false,
+    });
     setJoining(false);
 
-    if (insertErr) {
-      console.error('Lobby insert error:', insertErr);
-      setError('Failed to join. Please try again.');
-      return;
-    }
-
-    // Check if game already active — if so go straight to game
-    const { data: sess } = await supabase
-      .from('game_sessions')
-      .select('status')
-      .eq('id', sessionId)
-      .single();
-
-    if (sess?.status === 'active') {
-      onJoined(code, nickname.trim(), house, avatarId);
-      return;
-    }
+    // Check if game already active
+    const result = await findGame(code.trim());
+    if (!result) { setStep(3); return; }
 
     // Otherwise enter waiting room
     setStep(3);
@@ -147,12 +119,10 @@ export default function JoinWithCode({ user, prefillCode = '', onJoined, onBack 
     if (v.length === 6) {
       setTimeout(() => { soundEngine.click(); setStep(2); setSessionId(null); }, 200);
       // Still validate via handleCodeSubmit logic inline
-      supabase.from('game_sessions').select('id,status').eq('game_code', v).neq('status','completed').single()
-        .then(({ data }) => {
-          if (!data) { setError('❌ Game not found. Check the code.'); setStep(1); return; }
-          setSessionId(data.id);
-          if (data.status === 'active') setError('⚠️ Game already started, but you can still join!');
-        });
+      findGame(v).then(result => {
+        if (!result) { setError('❌ Game not found. Check the code.'); setStep(1); return; }
+        setSessionId(result.sessionId);
+      });
     }
   };
 

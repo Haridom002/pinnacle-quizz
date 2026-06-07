@@ -26,8 +26,9 @@ import { soundEngine } from './utils/soundEngine';
 import SettingsModal from './components/SettingsModal';
 import {
   supabase, fetchPublicQuizzes, saveQuizToDb,
-  createGameSession, joinGameByCode, DbQuiz, isSupabaseConfigured
+  DbQuiz, isSupabaseConfigured
 } from './lib/supabase';
+import { hostGame, findGame } from './lib/gameStore';
 
 type Phase =
   | 'auth' | 'home' | 'join-code'
@@ -561,17 +562,17 @@ export default function AppPreview() {
       user={mockUser}
       onJoined={async (code, nickname, houseId, avId) => {
         // Load the real quiz from Supabase via game code
-        const result = await joinGameByCode(code);
+        const result = await findGame(code);
         let quizToPlay: Quiz;
-        if (result) {
-          quizToPlay = dbToQuiz(result.quiz);
+        if (result?.quiz) {
+          quizToPlay = result.quiz;
         } else {
           // Fallback: use first sample quiz (demo mode)
           quizToPlay = SAMPLE_QUIZZES[0];
         }
         setSelectedQuiz(quizToPlay);
         setGameCode(code);
-        if (result) setSessionId(result.session.id);
+        if (result) setSessionId(result.sessionId);
         // Set guest user if not logged in
         if (!mockUser) {
           setMockUser({ id: 'guest-' + Date.now(), full_name: nickname,
@@ -649,32 +650,9 @@ export default function AppPreview() {
     <QuizDetail
       quiz={selectedQuiz}
       onPlay={async () => {
-        // Always generate a code
-        let code = Math.floor(100000 + Math.random() * 900000).toString();
-        let sid: string | undefined;
-
-        if (mockUser) {
-          // Try to create session in Supabase
-          const sess = await createGameSession(selectedQuiz.id, mockUser.id);
-          if (sess) {
-            code = sess.code;
-            sid  = sess.sessionId;
-          } else {
-            // Supabase session creation failed (quiz may be local/sample)
-            // Create a minimal session manually
-            const { data } = await supabase
-              .from('game_sessions')
-              .insert({
-                quiz_id:   selectedQuiz.id.startsWith('sample-') ? selectedQuiz.id : selectedQuiz.id,
-                host_id:   mockUser.id,
-                game_code: code,
-                status:    'waiting',
-              })
-              .select('id').single();
-            if (data) sid = data.id;
-          }
-        }
-
+        const hostId = mockUser?.id ?? 'host-' + Date.now();
+        // hostGame always works — memory store + best-effort Supabase
+        const { code, sessionId: sid } = await hostGame(selectedQuiz, hostId);
         setGameCode(code);
         setSessionId(sid);
         navigate('lobby');

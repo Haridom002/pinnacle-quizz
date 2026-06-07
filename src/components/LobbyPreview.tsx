@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Quiz, Player } from '../types';
 import { getAvatar, CARTOON_AVATARS } from '../lib/avatars';
-import { supabase, startGameSession, DbLobbyPlayer } from '../lib/supabase';
+import { supabase, DbLobbyPlayer } from '../lib/supabase';
+import { startGame, joinLobby } from '../lib/gameStore';
 
 interface MockUser { id:string; full_name:string; avatar_id:string; house?:unknown; [k:string]:unknown; }
 interface Props {
@@ -104,15 +105,13 @@ export default function LobbyPreview({ quiz, gameCode, sessionId: propSessionId,
     playerRef.current = player;
 
     // Add host to lobby
-    await supabase.from('lobby_players').upsert({
-      session_id:   sessionId,
-      player_id:    hostId,
-      display_name: playerName,
-      avatar_id:    avatarId,
-      house:        (mockUser?.house as string) ?? 'Alpha',
-      is_host:      true,
-      joined_at:    new Date().toISOString(),
-    }, { onConflict: 'session_id,player_id' });
+    await joinLobby(sessionId, {
+      playerId:    hostId,
+      displayName: playerName,
+      avatarId,
+      house:       (mockUser?.house as string) ?? 'Alpha',
+      isHost:      true,
+    });
 
     setJoined(true);
   }, [playerName, sessionId, mockUser, av.emoji, avatarId]);
@@ -123,7 +122,7 @@ export default function LobbyPreview({ quiz, gameCode, sessionId: propSessionId,
     if (!sessionId || !playerRef.current) return;
 
     // Update session to active — all waiting players get notified via realtime
-    await startGameSession(sessionId);
+    await startGame(gameCode, sessionId);
     setCountdown(3);
   }, [joined, sessionId, handleJoinAsHost]);
 
