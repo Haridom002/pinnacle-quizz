@@ -43,6 +43,63 @@ export default function QuizBuilder({ initialQuiz, onSave, onBack }: QuizBuilder
 
   const ICONS = ['📚', '📐', '🔬', '🌍', '💻', '🎭', '🎨', '🏛️', '⚗️', '🧬', '📊', '🎯'];
   const imgInputRef = useRef<HTMLInputElement>(null);
+  const docInputRef = useRef<HTMLInputElement>(null);
+  const [showImport, setShowImport] = useState(false);
+  const [importText, setImportText] = useState('');
+  const [importError, setImportError] = useState('');
+
+  // Parse pasted/uploaded text into questions
+  // Format: Q: question text\nA: answer1\nB: answer2\nC: answer3\nD: answer4\nANS: A
+  const parseImportText = (text: string) => {
+    const blocks = text.split(/\n\s*\n/).filter(b => b.trim());
+    const parsed: Question[] = [];
+    for (const block of blocks) {
+      const lines = block.split('\n').map(l => l.trim()).filter(Boolean);
+      const qLine  = lines.find(l => /^Q[:\.]/.test(l));
+      const aLine  = lines.find(l => /^A[:\.]/.test(l));
+      const bLine  = lines.find(l => /^B[:\.]/.test(l));
+      const cLine  = lines.find(l => /^C[:\.]/.test(l));
+      const dLine  = lines.find(l => /^D[:\.]/.test(l));
+      const ansLine = lines.find(l => /^ANS[:\.]|^Answer[:.]/i.test(l));
+      if (!qLine || !aLine || !bLine || !ansLine) continue;
+      const qText  = qLine.replace(/^Q[:\.\s]+/i, '').trim();
+      const opts   = [aLine, bLine, cLine, dLine].filter(Boolean).map(l => l!.replace(/^[A-D][:\.\s]+/i, '').trim());
+      const ansLetter = ansLine.replace(/^ANS[:\.\s]+|^Answer[:\.\s]+/i, '').trim().toUpperCase();
+      const ansIdx = ['A','B','C','D'].indexOf(ansLetter);
+      if (!qText || opts.length < 2 || ansIdx < 0) continue;
+      const answers: Answer[] = opts.map((text, i) => ({
+        id: `ans-${Date.now()}-${i}`,
+        text, isCorrect: i === ansIdx,
+        color: ['#E21B3C','#1368CE','#26890C','#FFA602'][i] ?? '#E21B3C',
+        icon:  ['▲','◆','●','★'][i] ?? '▲',
+      }));
+      parsed.push({
+        id: `q-import-${Date.now()}-${parsed.length}`,
+        text: qText, type: 'multiple-choice' as const,
+        timeLimit: 20, points: 1000,
+        explanation: '', answers,
+      });
+    }
+    return parsed;
+  };
+
+  const handleDocUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => { setImportText(ev.target?.result as string ?? ''); };
+    reader.readAsText(file);
+  };
+
+  const handleImport = () => {
+    if (!importText.trim()) { setImportError('Paste your questions first'); return; }
+    const parsed = parseImportText(importText);
+    if (parsed.length === 0) { setImportError('No valid questions found. Check the format below.'); return; }
+    setImportError('');
+    setQuestions(prev => [...prev, ...parsed]);
+    setImportText('');
+    setShowImport(false);
+  };
 
   // Upload image → convert to base64 data URL
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {

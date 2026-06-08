@@ -175,8 +175,25 @@ export default function AppPreview() {
 
   // ── Load quizzes from Supabase ────────────────────────────────
   const loadQuizzes = useCallback(async () => {
-    const dbQs = await fetchPublicQuizzes();
-    if (dbQs.length > 0) setQuizzes(dbQs.map(dbToQuiz));
+    // Always load from localStorage first (instant, works offline)
+    const saved = localStorage.getItem('pinnacle-quizzes');
+    if (saved) {
+      try {
+        const localQs = JSON.parse(saved) as Quiz[];
+        if (localQs.length > 0) setQuizzes(localQs);
+      } catch {}
+    }
+    // Then try Supabase (may be blocked, that's OK)
+    try {
+      const dbQs = await fetchPublicQuizzes();
+      if (dbQs.length > 0) {
+        const merged = dbQs.map(dbToQuiz);
+        setQuizzes(merged);
+        localStorage.setItem('pinnacle-quizzes', JSON.stringify(merged));
+      }
+    } catch (e) {
+      console.warn('Supabase quiz load failed, using local cache', e);
+    }
   }, []);
 
   // ── Restore session on app load ───────────────────────────────
@@ -616,26 +633,36 @@ export default function AppPreview() {
           }
           setEditingQuiz(null);
         } else {
-          setQuizzes(p => [q, ...p]);
+          // Save to local state immediately
+          setQuizzes(p => {
+            const updated = [q, ...p.filter(x => x.id !== q.id)];
+            // Save to localStorage so it survives refresh
+            localStorage.setItem('pinnacle-quizzes', JSON.stringify(updated));
+            return updated;
+          });
+
         if (mockUser) {
-          // Save to Supabase
-          const qs = q.questions.map((qu, i) => ({
-            position: i, text: qu.text, type: 'multiple-choice',
-            time_limit: qu.timeLimit, points: qu.points,
-            explanation: qu.explanation ?? '',
-            answers: qu.answers.map((a, ai) => ({
-              position: ai, text: a.text, is_correct: a.isCorrect,
-              color: a.color ?? '#E21B3C', icon: a.icon ?? '▲',
-            })),
-          }));
-          await saveQuizToDb({
-            title: q.title, description: q.description ?? '',
-            subject: q.subject, grade: q.grade,
-            cover_color: q.coverColor, icon: q.icon, is_public: true,
-          }, qs, mockUser.id);
-          // Reload all quizzes so this one appears for everyone
-          await loadQuizzes();
+          // Try Supabase (best effort — may be blocked by network restrictions)
+          try {
+            const qs = q.questions.map((qu, i) => ({
+              position: i, text: qu.text, type: 'multiple-choice',
+              time_limit: qu.timeLimit, points: qu.points,
+              explanation: qu.explanation ?? '',
+              answers: qu.answers.map((a, ai) => ({
+                position: ai, text: a.text, is_correct: a.isCorrect,
+                color: a.color ?? '#E21B3C', icon: a.icon ?? '▲',
+              })),
+            }));
+            await saveQuizToDb({
+              title: q.title, description: q.description ?? '',
+              subject: q.subject, grade: q.grade,
+              cover_color: q.coverColor, icon: q.icon, is_public: true,
+            }, qs, mockUser.id);
+            await loadQuizzes();
+          } catch (e) {
+            console.warn('Supabase quiz save failed, saved locally only', e);
           }
+        }
         }
         goHome();
       }}
@@ -703,8 +730,12 @@ export default function AppPreview() {
       onEditQuiz={q => { setEditingQuiz(q); navigate('quiz-builder'); }}
       onDeleteQuiz={async q => {
         if (!window.confirm(`Delete "${q.title}"? This cannot be undone.`)) return;
-        setQuizzes(p => p.filter(x => x.id !== q.id));
-        if (mockUser) await supabase.from('quizzes').delete().eq('id', q.id);
+        setQuizzes(p => {
+          const updated = p.filter(x => x.id !== q.id);
+          localStorage.setItem('pinnacle-quizzes', JSON.stringify(updated));
+          return updated;
+        });
+        try { await supabase.from('quizzes').delete().eq('id', q.id); } catch {}
       }}
       onCreateQuiz={() => { setEditingQuiz(null); navigate('quiz-builder'); }}
       onArena={() => navigate('arena-hub')}
