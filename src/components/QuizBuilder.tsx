@@ -50,34 +50,80 @@ export default function QuizBuilder({ initialQuiz, onSave, onBack }: QuizBuilder
 
   // Parse pasted/uploaded text into questions
   // Format: Q: question text\nA: answer1\nB: answer2\nC: answer3\nD: answer4\nANS: A
-  const parseImportText = (text: string) => {
-    const blocks = text.split(/\n\s*\n/).filter(b => b.trim());
+  const parseImportText = (text: string): Question[] => {
     const parsed: Question[] = [];
+    // Normalize line endings
+    const normalized = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+    // Split into blocks by blank lines
+    const blocks = normalized.split(/\n{2,}/).map(b => b.trim()).filter(Boolean);
+
     for (const block of blocks) {
       const lines = block.split('\n').map(l => l.trim()).filter(Boolean);
-      const qLine  = lines.find(l => /^Q[:\.]/.test(l));
-      const aLine  = lines.find(l => /^A[:\.]/.test(l));
-      const bLine  = lines.find(l => /^B[:\.]/.test(l));
-      const cLine  = lines.find(l => /^C[:\.]/.test(l));
-      const dLine  = lines.find(l => /^D[:\.]/.test(l));
-      const ansLine = lines.find(l => /^ANS[:\.]|^Answer[:.]/i.test(l));
-      if (!qLine || !aLine || !bLine || !ansLine) continue;
-      const qText  = qLine.replace(/^Q[:\.\s]+/i, '').trim();
-      const opts   = [aLine, bLine, cLine, dLine].filter(Boolean).map(l => l!.replace(/^[A-D][:\.\s]+/i, '').trim());
-      const ansLetter = ansLine.replace(/^ANS[:\.\s]+|^Answer[:\.\s]+/i, '').trim().toUpperCase();
-      const ansIdx = ['A','B','C','D'].indexOf(ansLetter);
-      if (!qText || opts.length < 2 || ansIdx < 0) continue;
+      if (lines.length < 3) continue;
+
+      // Extract question — supports: "Q:", "Q.", "Q)", "1.", "1)", plain text on first line
+      let qText = '';
+      let startIdx = 0;
+      const qMatch = lines[0].match(/^(?:Q(?:uestion)?[:.)]?\s*\d*[:.)]?|\d+[.)]?)\s*(.+)/i);
+      if (qMatch) {
+        qText = qMatch[1].trim();
+        startIdx = 1;
+      } else {
+        qText = lines[0].trim();
+        startIdx = 1;
+      }
+      if (!qText) continue;
+
+      // Extract options — supports A) A. A: or a) a. a:
+      const optLines: string[] = [];
+      let answerLine = '';
+      for (let i = startIdx; i < lines.length; i++) {
+        const l = lines[i];
+        if (/^(?:ANS(?:wer)?|Correct|Key)[:.)]?\s*/i.test(l)) {
+          answerLine = l;
+        } else if (/^[A-Da-d][:.)]\s*.+/.test(l)) {
+          optLines.push(l);
+        }
+      }
+
+      if (optLines.length < 2) continue;
+
+      // Parse options text
+      const opts = optLines.map(l => l.replace(/^[A-Da-d][:.)]\s*/, '').trim());
+
+      // Determine correct answer
+      let ansIdx = 0; // default first option
+      if (answerLine) {
+        const ansVal = answerLine.replace(/^(?:ANS(?:wer)?|Correct|Key)[:.)]?\s*/i, '').trim().toUpperCase();
+        const byLetter = ['A','B','C','D'].indexOf(ansVal.charAt(0));
+        const byNum    = parseInt(ansVal) - 1;
+        if (byLetter >= 0) ansIdx = byLetter;
+        else if (!isNaN(byNum) && byNum >= 0) ansIdx = byNum;
+        else {
+          // Match by text
+          const found = opts.findIndex(o => o.toLowerCase() === ansVal.toLowerCase());
+          if (found >= 0) ansIdx = found;
+        }
+      }
+
+      const COLORS = ['#E21B3C','#1368CE','#26890C','#FFA602'];
+      const ICONS  = ['▲','◆','●','★'];
       const answers: Answer[] = opts.map((text, i) => ({
-        id: `ans-${Date.now()}-${i}`,
-        text, isCorrect: i === ansIdx,
-        color: ['#E21B3C','#1368CE','#26890C','#FFA602'][i] ?? '#E21B3C',
-        icon:  ['▲','◆','●','★'][i] ?? '▲',
+        id: `ans-${Date.now()}-${parsed.length}-${i}`,
+        text,
+        isCorrect: i === ansIdx,
+        color: COLORS[i] ?? '#E21B3C',
+        icon:  ICONS[i]  ?? '▲',
       }));
+
       parsed.push({
-        id: `q-import-${Date.now()}-${parsed.length}`,
-        text: qText, type: 'multiple-choice' as const,
-        timeLimit: 20, points: 1000,
-        explanation: '', answers,
+        id: `q-imp-${Date.now()}-${parsed.length}`,
+        text: qText,
+        type: 'multiple-choice' as const,
+        timeLimit: 20,
+        points: 1000,
+        explanation: '',
+        answers,
       });
     }
     return parsed;

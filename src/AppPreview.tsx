@@ -622,47 +622,51 @@ export default function AppPreview() {
       initialQuiz={editingQuiz ?? undefined}
       onSave={async q => {
         if (editingQuiz) {
-          // Update existing quiz in library
-          setQuizzes(p => p.map(existing => existing.id === editingQuiz.id ? { ...q, id: editingQuiz.id } : existing));
-          // Update in Supabase
-          if (mockUser) {
+          // EDIT existing quiz
+          setQuizzes(p => {
+            const updated = p.map(x => x.id === editingQuiz.id ? { ...q, id: editingQuiz.id } : x);
+            localStorage.setItem('pinnacle-quizzes', JSON.stringify(updated));
+            return updated;
+          });
+          setEditingQuiz(null);
+          try {
             await supabase.from('quizzes').update({
               title: q.title, description: q.description, subject: q.subject,
               grade: q.grade, cover_color: q.coverColor, icon: q.icon,
             }).eq('id', editingQuiz.id);
-          }
-          setEditingQuiz(null);
+          } catch {}
         } else {
-          // Save to local state immediately
+          // SAVE new quiz — always to localStorage first so it never disappears
           setQuizzes(p => {
             const updated = [q, ...p.filter(x => x.id !== q.id)];
-            // Save to localStorage so it survives refresh
             localStorage.setItem('pinnacle-quizzes', JSON.stringify(updated));
             return updated;
           });
-
-        if (mockUser) {
-          // Try Supabase (best effort — may be blocked by network restrictions)
-          try {
-            const qs = q.questions.map((qu, i) => ({
-              position: i, text: qu.text, type: 'multiple-choice',
-              time_limit: qu.timeLimit, points: qu.points,
-              explanation: qu.explanation ?? '',
-              answers: qu.answers.map((a, ai) => ({
-                position: ai, text: a.text, is_correct: a.isCorrect,
-                color: a.color ?? '#E21B3C', icon: a.icon ?? '▲',
-              })),
-            }));
-            await saveQuizToDb({
-              title: q.title, description: q.description ?? '',
-              subject: q.subject, grade: q.grade,
-              cover_color: q.coverColor, icon: q.icon, is_public: true,
-            }, qs, mockUser.id);
-            await loadQuizzes();
-          } catch (e) {
-            console.warn('Supabase quiz save failed, saved locally only', e);
+          // Also try Supabase so other devices can see it
+          if (mockUser) {
+            try {
+              const qs = q.questions.map((qu, i) => ({
+                position: i, text: qu.text, type: 'multiple-choice',
+                time_limit: qu.timeLimit, points: qu.points,
+                explanation: qu.explanation ?? '',
+                answers: qu.answers.map((a, ai) => ({
+                  position: ai, text: a.text, is_correct: a.isCorrect,
+                  color: a.color ?? '#E21B3C', icon: a.icon ?? '▲',
+                })),
+              }));
+              const savedId = await saveQuizToDb({
+                title: q.title, description: q.description ?? '',
+                subject: q.subject, grade: q.grade,
+                cover_color: q.coverColor, icon: q.icon, is_public: true,
+              }, qs, mockUser.id);
+              if (savedId) {
+                // Reload from Supabase so all users see it
+                await loadQuizzes();
+              }
+            } catch (e) {
+              console.warn('Supabase quiz save failed — quiz saved locally', e);
+            }
           }
-        }
         }
         goHome();
       }}
