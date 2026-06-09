@@ -1,6 +1,8 @@
 import { useState, useRef } from 'react';
 import { Quiz, Question, Answer } from '../types';
 import { SUBJECTS, GRADE_LEVELS, QUIZ_COVER_COLORS, ANSWER_COLORS, ANSWER_ICONS } from '../data/quizzes';
+import { saveQuizToDb, isSupabaseConfigured } from '../lib/supabase';
+import { useAuth } from '../contexts/AuthContext';
 
 interface QuizBuilderProps {
   initialQuiz?: Quiz;
@@ -30,6 +32,7 @@ function makeEmptyQuestion(_index: number): Question {
 }
 
 export default function QuizBuilder({ initialQuiz, onSave, onBack }: QuizBuilderProps) {
+  const { user } = useAuth();
   const [title, setTitle] = useState(initialQuiz?.title ?? '');
   const [description, setDescription] = useState(initialQuiz?.description ?? '');
   const [subject, setSubject] = useState(initialQuiz?.subject ?? 'Mathematics');
@@ -243,7 +246,7 @@ export default function QuizBuilder({ initialQuiz, onSave, onBack }: QuizBuilder
     return Object.keys(errs).length === 0;
   }
 
-  function handleSave() {
+  async function handleSave() {
     if (!validate()) return;
     const quiz: Quiz = {
       id: generateId(),
@@ -258,6 +261,43 @@ export default function QuizBuilder({ initialQuiz, onSave, onBack }: QuizBuilder
       playCount: 0,
     };
     setSaved(true);
+
+    // Save to Supabase if configured and user is logged in
+    if (isSupabaseConfigured && user?.id) {
+      try {
+        const dbQuestions = questions.map((q, i) => ({
+          position: i,
+          text: q.text,
+          type: q.type,
+          time_limit: q.timeLimit,
+          points: q.points,
+          explanation: q.explanation ?? '',
+          answers: q.answers.map((a, j) => ({
+            position: j,
+            text: a.text,
+            is_correct: a.isCorrect,
+            color: a.color,
+            icon: a.icon,
+          })),
+        }));
+        await saveQuizToDb(
+          {
+            title,
+            description,
+            subject,
+            grade,
+            cover_color: coverColor,
+            icon: coverIcon,
+            is_public: true,
+          },
+          dbQuestions,
+          user.id
+        );
+      } catch (err) {
+        console.error('Failed to save quiz to Supabase:', err);
+      }
+    }
+
     setTimeout(() => onSave(quiz), 800);
   }
 

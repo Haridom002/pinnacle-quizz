@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Quiz, Player, PlayerAnswer } from './types';
 import { SAMPLE_QUIZZES } from './data/quizzes';
+import { fetchPublicQuizzes, isSupabaseConfigured } from './lib/supabase';
 import { generateGameCode, simulateBotAnswer, calculatePoints, getStreakMultiplier } from './utils/gameUtils';
 import HomeScreen from './components/HomeScreen';
 import QuizDetail from './components/QuizDetail';
@@ -23,6 +24,41 @@ type AppPhase =
 export default function App() {
   const [phase, setPhase]               = useState<AppPhase>('home');
   const [quizLibrary, setQuizzes]       = useState<Quiz[]>(SAMPLE_QUIZZES);
+
+  // Load quizzes from Supabase on mount
+  useEffect(() => {
+    if (!isSupabaseConfigured) return;
+    fetchPublicQuizzes().then(dbQuizzes => {
+      if (dbQuizzes.length === 0) return;
+      const mapped: Quiz[] = dbQuizzes.map(q => ({
+        id: q.id,
+        title: q.title,
+        description: q.description,
+        subject: q.subject,
+        grade: q.grade,
+        coverColor: q.cover_color,
+        icon: q.icon,
+        playCount: q.play_count,
+        createdAt: q.created_at?.split('T')[0] ?? '',
+        questions: (q.questions ?? []).map(qq => ({
+          id: qq.id,
+          text: qq.text,
+          type: qq.type as any,
+          timeLimit: qq.time_limit,
+          points: qq.points,
+          explanation: qq.explanation,
+          answers: (qq.answers ?? []).map(a => ({
+            id: a.id,
+            text: a.text,
+            isCorrect: a.is_correct,
+            color: a.color,
+            icon: a.icon,
+          })),
+        })),
+      }));
+      setQuizzes(mapped);
+    });
+  }, []);
   const [selectedQuiz, setSelectedQuiz] = useState<Quiz | null>(null);
   const [gameCode, setGameCode]         = useState('');
   const [currentPlayer, setCurrentPlayer] = useState<Player | null>(null);

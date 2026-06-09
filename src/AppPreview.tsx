@@ -122,7 +122,7 @@ export default function AppPreview() {
   const [authLoading,   setAuthLoading]   = useState(false);
 
   // ── Quiz library ──────────────────────────────────────────────
-  const [quizLibrary,   setQuizzes]       = useState<Quiz[]>([]);
+  const [quizLibrary,   setQuizzes]       = useState<Quiz[]>(SAMPLE_QUIZZES);
   const [selectedQuiz,  setSelectedQuiz]  = useState<Quiz|null>(null);
   const [gameCode,      setGameCode]      = useState('');
   const [sessionId,     setSessionId]     = useState<string|undefined>(undefined);
@@ -175,24 +175,31 @@ export default function AppPreview() {
 
   // ── Load quizzes from Supabase ────────────────────────────────
   const loadQuizzes = useCallback(async () => {
-    // Always show sample quizzes as base
-    const base = [...SAMPLE_QUIZZES];
+    // Step 1: Load from localStorage immediately (always works, instant)
+    const saved = localStorage.getItem('pinnacle-quizzes');
+    if (saved) {
+      try {
+        const localQs = JSON.parse(saved) as Quiz[];
+        if (localQs.length > 0) {
+          setQuizzes(localQs);
+          return; // Use local cache, don't wait for Supabase
+        }
+      } catch {}
+    }
+    // Step 2: If no local cache, try Supabase
     try {
-      // Fetch teacher-created quizzes from Supabase
       const dbQs = await fetchPublicQuizzes();
       if (dbQs.length > 0) {
-        const dbList = dbQs.map(dbToQuiz);
-        // Merge: Supabase quizzes first, then sample quizzes (no duplicates)
-        const sampleIds = new Set(dbList.map(q => q.id));
-        const merged = [...dbList, ...base.filter(q => !sampleIds.has(q.id))];
+        const merged = dbQs.map(dbToQuiz);
         setQuizzes(merged);
+        localStorage.setItem('pinnacle-quizzes', JSON.stringify(merged));
       } else {
-        // No DB quizzes yet — just show samples
-        setQuizzes(base);
+        // Use sample quizzes as fallback
+        setQuizzes(SAMPLE_QUIZZES);
       }
     } catch (e) {
-      console.warn('loadQuizzes failed:', e);
-      setQuizzes(base);
+      console.warn('Supabase unavailable, using sample quizzes');
+      setQuizzes(SAMPLE_QUIZZES);
     }
   }, []);
 
@@ -308,7 +315,7 @@ export default function AppPreview() {
     localStorage.removeItem('pinnacle-user');
     localStorage.removeItem('pinnacle-quiz-auth');
     setMockUser(null);
-    setQuizzes([]);
+    setQuizzes(SAMPLE_QUIZZES);
     setPhase('auth');
     soundEngine.stopBgMusic();
   };
@@ -636,7 +643,13 @@ export default function AppPreview() {
             }).eq('id', editingQuiz.id);
           } catch {}
         } else {
-          // SAVE new quiz — save to Supabase so ALL devices see it
+          // SAVE new quiz — always to localStorage first so it never disappears
+          setQuizzes(p => {
+            const updated = [q, ...p.filter(x => x.id !== q.id)];
+            localStorage.setItem('pinnacle-quizzes', JSON.stringify(updated));
+            return updated;
+          });
+          // Also try Supabase so other devices can see it
           if (mockUser) {
             try {
               const qs = q.questions.map((qu, i) => ({
@@ -648,25 +661,18 @@ export default function AppPreview() {
                   color: a.color ?? '#E21B3C', icon: a.icon ?? '▲',
                 })),
               }));
-              await saveQuizToDb({
+              const savedId = await saveQuizToDb({
                 title: q.title, description: q.description ?? '',
                 subject: q.subject, grade: q.grade,
                 cover_color: q.coverColor, icon: q.icon, is_public: true,
               }, qs, mockUser.id);
-              // Reload from Supabase — every device now sees the new quiz
-              await loadQuizzes();
+              if (savedId) {
+                // Reload from Supabase so all users see it
+                await loadQuizzes();
+              }
             } catch (e) {
-              console.error('Quiz save failed:', e);
-              alert('Failed to save quiz. Please try again.');
-              return; // Don't navigate away if save failed
+              console.warn('Supabase quiz save failed — quiz saved locally', e);
             }
-          } else {
-            // No user — save locally only
-            setQuizzes(p => {
-              const updated = [q, ...p.filter(x => x.id !== q.id)];
-              localStorage.setItem('pinnacle-quizzes', JSON.stringify(updated));
-              return updated;
-            });
           }
         }
         goHome();
