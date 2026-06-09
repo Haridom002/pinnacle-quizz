@@ -267,6 +267,7 @@ export default function QuizBuilder({ initialQuiz, onSave, onBack, userId }: Qui
     setSaved(true);
 
     // Save to Supabase if configured and user is logged in
+    console.log('💾 Save attempt — isSupabaseConfigured:', isSupabaseConfigured, '| userId:', userId);
     if (isSupabaseConfigured && userId) {
       try {
         const dbQuestions = questions.map((q, i) => ({
@@ -298,8 +299,10 @@ export default function QuizBuilder({ initialQuiz, onSave, onBack, userId }: Qui
           userId
         );
       } catch (err) {
-        console.error('Failed to save quiz to Supabase:', err);
+        console.error('❌ Failed to save quiz to Supabase:', err);
       }
+    } else {
+      console.warn('⚠️ Skipped Supabase save — isSupabaseConfigured:', isSupabaseConfigured, '| userId:', userId);
     }
 
     setTimeout(() => onSave(quiz), 800);
