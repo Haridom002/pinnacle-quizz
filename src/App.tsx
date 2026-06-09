@@ -11,6 +11,7 @@ import QuestionScreen from './components/QuestionScreen';
 import Leaderboard from './components/Leaderboard';
 import Podium from './components/Podium';
 import QuizBuilder from './components/QuizBuilder';
+import GESQuizSelector from './components/GESQuizSelector';
 import ArenaHub from './components/ArenaHub';
 import LightningCalculator from './components/LightningCalculator';
 import FormationMode from './components/FormationMode';
@@ -19,7 +20,7 @@ import ArenaHostMode from './components/ArenaHostMode';
 
 type AppPhase =
   | 'home' | 'lobby' | 'question' | 'leaderboard' | 'podium'
-  | 'quiz-builder' | 'quiz-detail'
+  | 'quiz-builder' | 'ges-selector' | 'quiz-detail'
   | 'arena-hub' | 'lightning-calc' | 'formation-mode' | 'tug-war' | 'arena-host';
 
 export default function App() {
@@ -136,6 +137,7 @@ export default function App() {
   if (phase === 'lightning-calc') return <LightningCalculator onBack={() => setPhase('arena-hub')} />;
   if (phase === 'formation-mode') return <FormationMode onBack={() => setPhase('arena-hub')} />;
   if (phase === 'tug-war')        return <TugOfWar onBack={() => setPhase('arena-hub')} />;
+  if (phase === 'ges-selector')   return <GESQuizSelector onStart={q => { setSelectedQuiz(q); setPhase('lobby'); }} onBack={() => setPhase('home')} />;
   if (phase === 'quiz-builder')   return <QuizBuilder userId={user?.id ?? session?.user?.id} onSave={q => { setQuizzes(p => [q, ...p]); setTimeout(() => setPhase('home'), 800); }} onBack={() => setPhase('home')} />;
 
   if (phase === 'quiz-detail' && selectedQuiz)
@@ -161,7 +163,7 @@ export default function App() {
     <HomeScreen
       onStartQuiz={q => { setSelectedQuiz(q); setGameCode(generateGameCode()); setPhase('lobby'); }}
       onViewQuiz={q => { setSelectedQuiz(q); setPhase('quiz-detail'); }}
-      onCreateQuiz={() => setPhase('quiz-builder')}
+      onCreateQuiz={() => setPhase('ges-selector')}
       onArena={() => setPhase('arena-hub')}
       quizzes={quizLibrary}
     />
