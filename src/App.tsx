@@ -23,7 +23,7 @@ type AppPhase =
   | 'arena-hub' | 'lightning-calc' | 'formation-mode' | 'tug-war' | 'arena-host';
 
 export default function App() {
-  const { user } = useAuth();
+  const { user, session } = useAuth();
   const [phase, setPhase]               = useState<AppPhase>('home');
   const [quizLibrary, setQuizzes]       = useState<Quiz[]>(SAMPLE_QUIZZES);
 
@@ -137,7 +137,7 @@ export default function App() {
   if (phase === 'lightning-calc') return <LightningCalculator onBack={() => setPhase('arena-hub')} />;
   if (phase === 'formation-mode') return <FormationMode onBack={() => setPhase('arena-hub')} />;
   if (phase === 'tug-war')        return <TugOfWar onBack={() => setPhase('arena-hub')} />;
-  if (phase === 'quiz-builder')   return <QuizBuilder userId={user?.id} onSave={q => { setQuizzes(p => [q, ...p]); setTimeout(() => setPhase('home'), 800); }} onBack={() => setPhase('home')} />;
+  if (phase === 'quiz-builder')   return <QuizBuilder userId={user?.id ?? session?.user?.id} onSave={q => { setQuizzes(p => [q, ...p]); setTimeout(() => setPhase('home'), 800); }} onBack={() => setPhase('home')} />;
 
   if (phase === 'quiz-detail' && selectedQuiz)
     return <QuizDetail quiz={selectedQuiz} onPlay={() => { setGameCode(generateGameCode()); setPhase('lobby'); }} onBack={() => setPhase('home')} />;
