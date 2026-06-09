@@ -220,14 +220,19 @@ export default function QuizBuilder({ initialQuiz, onSave, onBack }: QuizBuilder
 
   function addQuestion() {
     const newQ = makeEmptyQuestion(questions.length);
-    setQuestions((qs) => [...qs, newQ]);
-    setActiveQuestionIndex(questions.length);
+    setQuestions((qs) => {
+      setActiveQuestionIndex(qs.length);
+      return [...qs, newQ];
+    });
   }
 
   function removeQuestion(index: number) {
     if (questions.length === 1) return;
-    setQuestions((qs) => qs.filter((_, i) => i !== index));
-    setActiveQuestionIndex(Math.max(0, index - 1));
+    setQuestions((qs) => {
+      const updated = qs.filter((_, i) => i !== index);
+      setActiveQuestionIndex(Math.max(0, Math.min(index, updated.length - 1)));
+      return updated;
+    });
   }
 
   function validate(): boolean {

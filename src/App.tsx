@@ -30,32 +30,39 @@ export default function App() {
     if (!isSupabaseConfigured) return;
     fetchPublicQuizzes().then(dbQuizzes => {
       if (dbQuizzes.length === 0) return;
-      const mapped: Quiz[] = dbQuizzes.map(q => ({
-        id: q.id,
-        title: q.title,
-        description: q.description,
-        subject: q.subject,
-        grade: q.grade,
-        coverColor: q.cover_color,
-        icon: q.icon,
-        playCount: q.play_count,
-        createdAt: q.created_at?.split('T')[0] ?? '',
-        questions: (q.questions ?? []).map(qq => ({
-          id: qq.id,
-          text: qq.text,
-          type: qq.type as any,
-          timeLimit: qq.time_limit,
-          points: qq.points,
-          explanation: qq.explanation,
-          answers: (qq.answers ?? []).map(a => ({
-            id: a.id,
-            text: a.text,
-            isCorrect: a.is_correct,
-            color: a.color,
-            icon: a.icon,
-          })),
-        })),
-      }));
+      const mapped: Quiz[] = dbQuizzes.map(q => {
+        const questions = (q.questions ?? [])
+          .sort((a, b) => a.position - b.position)
+          .map(qq => ({
+            id: qq.id,
+            text: qq.text,
+            type: qq.type as any,
+            timeLimit: qq.time_limit,
+            points: qq.points,
+            explanation: qq.explanation ?? '',
+            answers: (qq.answers ?? [])
+              .sort((a, b) => a.position - b.position)
+              .map(a => ({
+                id: a.id,
+                text: a.text,
+                isCorrect: a.is_correct,
+                color: a.color,
+                icon: a.icon,
+              })),
+          }));
+        return {
+          id: q.id,
+          title: q.title,
+          description: q.description,
+          subject: q.subject,
+          grade: q.grade,
+          coverColor: q.cover_color,
+          icon: q.icon,
+          playCount: q.play_count,
+          createdAt: q.created_at?.split('T')[0] ?? '',
+          questions,
+        };
+      });
       setQuizzes(mapped);
     });
   }, []);
