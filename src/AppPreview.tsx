@@ -122,7 +122,7 @@ export default function AppPreview() {
   const [authLoading,   setAuthLoading]   = useState(false);
 
   // ── Quiz library ──────────────────────────────────────────────
-  const [quizLibrary,   setQuizzes]       = useState<Quiz[]>(SAMPLE_QUIZZES);
+  const [quizLibrary,   setQuizzes]       = useState<Quiz[]>([]);
   const [selectedQuiz,  setSelectedQuiz]  = useState<Quiz|null>(null);
   const [gameCode,      setGameCode]      = useState('');
   const [sessionId,     setSessionId]     = useState<string|undefined>(undefined);
@@ -175,29 +175,24 @@ export default function AppPreview() {
 
   // ── Load quizzes from Supabase ────────────────────────────────
   const loadQuizzes = useCallback(async () => {
+    // Always show sample quizzes as base
+    const base = [...SAMPLE_QUIZZES];
     try {
-      // Always load fresh from Supabase — this is the single source of truth
+      // Fetch teacher-created quizzes from Supabase
       const dbQs = await fetchPublicQuizzes();
       if (dbQs.length > 0) {
-        const quizList = dbQs.map(dbToQuiz);
-        setQuizzes(quizList);
-        // Keep localStorage in sync so it works as backup
-        localStorage.setItem('pinnacle-quizzes', JSON.stringify(quizList));
+        const dbList = dbQs.map(dbToQuiz);
+        // Merge: Supabase quizzes first, then sample quizzes (no duplicates)
+        const sampleIds = new Set(dbList.map(q => q.id));
+        const merged = [...dbList, ...base.filter(q => !sampleIds.has(q.id))];
+        setQuizzes(merged);
       } else {
-        // No quizzes in DB yet — show sample quizzes
-        setQuizzes(SAMPLE_QUIZZES);
+        // No DB quizzes yet — just show samples
+        setQuizzes(base);
       }
     } catch (e) {
       console.warn('loadQuizzes failed:', e);
-      // Fallback: try localStorage
-      try {
-        const saved = localStorage.getItem('pinnacle-quizzes');
-        if (saved) {
-          const localQs = JSON.parse(saved) as Quiz[];
-          if (localQs.length > 0) { setQuizzes(localQs); return; }
-        }
-      } catch {}
-      setQuizzes(SAMPLE_QUIZZES);
+      setQuizzes(base);
     }
   }, []);
 
@@ -313,7 +308,7 @@ export default function AppPreview() {
     localStorage.removeItem('pinnacle-user');
     localStorage.removeItem('pinnacle-quiz-auth');
     setMockUser(null);
-    setQuizzes(SAMPLE_QUIZZES);
+    setQuizzes([]);
     setPhase('auth');
     soundEngine.stopBgMusic();
   };
