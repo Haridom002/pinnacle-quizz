@@ -25,7 +25,7 @@ type AppPhase =
 export default function App() {
   const { user, session } = useAuth();
   const [phase, setPhase]               = useState<AppPhase>('home');
-  const [quizLibrary, setQuizzes]       = useState<Quiz[]>(SAMPLE_QUIZZES);
+  const [quizLibrary, setQuizzes]       = useState<Quiz[]>([]);
 
   // Load quizzes from Supabase on mount
   useEffect(() => {
@@ -33,7 +33,6 @@ export default function App() {
     if (!isSupabaseConfigured) { console.error('❌ Supabase not configured — check VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in Vercel'); return; }
     fetchPublicQuizzes().then(dbQuizzes => {
       console.log('📦 quizzes from Supabase:', dbQuizzes.length, dbQuizzes);
-      if (dbQuizzes.length === 0) return;
       const mapped: Quiz[] = dbQuizzes.map(q => {
         const questions = (q.questions ?? [])
           .sort((a, b) => a.position - b.position)
