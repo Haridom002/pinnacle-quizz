@@ -29,8 +29,10 @@ export default function App() {
 
   // Load quizzes from Supabase on mount
   useEffect(() => {
-    if (!isSupabaseConfigured) return;
+    console.log('🔍 isSupabaseConfigured:', isSupabaseConfigured);
+    if (!isSupabaseConfigured) { console.error('❌ Supabase not configured — check VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in Vercel'); return; }
     fetchPublicQuizzes().then(dbQuizzes => {
+      console.log('📦 quizzes from Supabase:', dbQuizzes.length, dbQuizzes);
       if (dbQuizzes.length === 0) return;
       const mapped: Quiz[] = dbQuizzes.map(q => {
         const questions = (q.questions ?? [])
