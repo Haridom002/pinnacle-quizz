@@ -1,268 +1,330 @@
-import { useState, useMemo } from 'react';
-import {
-  GES_SUBJECTS, getGrades, getStrands, getSubStrands, getTopics,
-  getAllQuestionsForTopic, Difficulty, BankQuestion,
-} from '../data/gesBank';
-import { Quiz, Question, Answer } from '../types';
-import { ANSWER_COLORS, ANSWER_ICONS } from '../data/quizzes';
+import { useState } from 'react';
+import { GES_SUBJECTS, getGESQuestions, gesQuestionsToQuiz, GESSubject } from '../data/gesQuestions';
+import { Quiz } from '../types';
 
 interface Props {
-  onStart: (quiz: Quiz) => void;
+  onStartQuiz: (quiz: Quiz) => void;
   onBack: () => void;
 }
 
-function generateId() {
-  return Math.random().toString(36).slice(2) + Date.now().toString(36);
-}
+type Step = 'subject' | 'strand' | 'substrand' | 'settings';
 
-function shuffle<T>(arr: T[]): T[] {
-  return [...arr].sort(() => Math.random() - 0.5);
-}
-
-const QUESTION_COUNTS = [5, 10, 15, 20, 30];
-const TIME_OPTIONS = [10, 20, 30, 60];
-const DIFFICULTIES: { value: Difficulty | 'all'; label: string; emoji: string }[] = [
-  { value: 'all', label: 'All Levels', emoji: '🌟' },
-  { value: 'beginner', label: 'Beginner', emoji: '🟢' },
-  { value: 'intermediate', label: 'Intermediate', emoji: '🟡' },
-  { value: 'advanced', label: 'Advanced', emoji: '🔴' },
+const GRADES = [
+  { value: 0,  label: 'All Grades' },
+  { value: 1,  label: 'Grade 1' },
+  { value: 2,  label: 'Grade 2' },
+  { value: 3,  label: 'Grade 3' },
+  { value: 4,  label: 'Grade 4' },
+  { value: 5,  label: 'Grade 5' },
+  { value: 6,  label: 'Grade 6' },
+  { value: 7,  label: 'Grade 7 (JHS 1)' },
+  { value: 8,  label: 'Grade 8 (JHS 2)' },
+  { value: 9,  label: 'Grade 9 (JHS 3)' },
 ];
 
-type Step = 'subject' | 'grade' | 'strand' | 'substrand' | 'topic' | 'settings';
+const DIFFICULTIES = [
+  { value: '',             label: 'All Levels',    icon: '🌟', desc: 'Mix of all difficulties' },
+  { value: 'beginner',     label: 'Beginner',      icon: '🌱', desc: 'Easy questions, more time' },
+  { value: 'intermediate', label: 'Intermediate',  icon: '⚡', desc: 'Standard WAEC level' },
+  { value: 'advanced',     label: 'Advanced',      icon: '🔥', desc: 'Challenging WAEC questions' },
+];
 
-export default function GESQuizSelector({ onStart, onBack }: Props) {
-  const [step, setStep] = useState<Step>('subject');
-  const [subject, setSubject] = useState('');
-  const [grade, setGrade] = useState('');
-  const [strand, setStrand] = useState('');
-  const [subStrand, setSubStrand] = useState('');
-  const [topic, setTopic] = useState('');
-  const [questionCount, setQuestionCount] = useState(10);
-  const [timeLimit, setTimeLimit] = useState(20);
-  const [difficulty, setDifficulty] = useState<Difficulty | 'all'>('all');
+const QUESTION_COUNTS = [5, 10, 15, 20, 25, 30];
+const TIME_OPTIONS = [
+  { value: 0,  label: 'Default time per question' },
+  { value: 10, label: '10 seconds per question' },
+  { value: 15, label: '15 seconds per question' },
+  { value: 20, label: '20 seconds per question' },
+  { value: 30, label: '30 seconds per question' },
+  { value: 45, label: '45 seconds per question' },
+  { value: 60, label: '60 seconds per question' },
+];
 
-  const grades = useMemo(() => getGrades(subject), [subject]);
-  const strands = useMemo(() => getStrands(subject, grade), [subject, grade]);
-  const subStrands = useMemo(() => getSubStrands(subject, grade, strand), [subject, grade, strand]);
-  const topics = useMemo(() => getTopics(subject, grade, strand, subStrand), [subject, grade, strand, subStrand]);
+export default function GESQuizSelector({ onStartQuiz, onBack }: Props) {
+  const [step,        setStep]        = useState<Step>('subject');
+  const [subject,     setSubject]     = useState<GESSubject | null>(null);
+  const [strandName,  setStrandName]  = useState('');
+  const [subStrand,   setSubStrand]   = useState('');
+  const [grade,       setGrade]       = useState(0);
+  const [difficulty,  setDifficulty]  = useState('');
+  const [qCount,      setQCount]      = useState(10);
+  const [timePerQ,    setTimePerQ]    = useState(0);
+  const [error,       setError]       = useState('');
 
-  const availableQuestions = useMemo(() => {
-    if (!topic) return [];
-    return getAllQuestionsForTopic(subject, grade, strand, subStrand, topic, difficulty === 'all' ? undefined : difficulty);
-  }, [subject, grade, strand, subStrand, topic, difficulty]);
+  const selectedStrand = subject?.strands.find(s => s.name === strandName);
 
-  function pick(value: string, nextStep: Step, setter: (v: string) => void) {
-    setter(value);
-    setStep(nextStep);
-  }
+  // Count available questions
+  const availableCount = getGESQuestions({
+    subject: subject?.name,
+    strand: strandName || undefined,
+    subStrand: subStrand || undefined,
+    grade: grade || undefined,
+    difficulty: difficulty || undefined,
+  }).length;
 
-  function buildAndStart() {
-    const pool: BankQuestion[] = shuffle(availableQuestions).slice(0, questionCount);
-    const questions: Question[] = pool.map(q => {
-      const shuffledIndexes = shuffle([0, 1, 2, 3]);
-      const answers: Answer[] = shuffledIndexes.map((origIdx, newIdx) => ({
-        id: generateId(),
-        text: q.answers[origIdx],
-        isCorrect: origIdx === q.correct,
-        color: ANSWER_COLORS[newIdx] ?? '#E21B3C',
-        icon: ANSWER_ICONS[newIdx] ?? '▲',
-      }));
-      return {
-        id: generateId(),
-        text: q.text,
-        type: 'multiple-choice' as any,
-        timeLimit,
-        points: difficulty === 'advanced' ? 1500 : difficulty === 'intermediate' ? 1200 : 1000,
-        explanation: '',
-        answers,
-      };
+  const handleStart = () => {
+    setError('');
+    const questions = getGESQuestions({
+      subject: subject?.name,
+      strand: strandName || undefined,
+      subStrand: subStrand || undefined,
+      grade: grade || undefined,
+      difficulty: difficulty || undefined,
     });
 
-    const quiz: Quiz = {
-      id: generateId(),
-      title: `${subject} – ${topic}`,
-      description: `${grade} | ${strand} › ${subStrand} | ${difficulty === 'all' ? 'All Levels' : difficulty}`,
-      subject,
-      grade,
-      coverColor: subject === 'Mathematics' ? 'from-blue-600 to-indigo-700'
-        : subject === 'English Language' ? 'from-green-600 to-teal-700'
-        : 'from-orange-600 to-red-700',
-      icon: subject === 'Mathematics' ? '📐' : subject === 'English Language' ? '📖' : '🔬',
-      questions,
-      createdAt: new Date().toISOString().split('T')[0],
-      playCount: 0,
-    };
+    if (questions.length === 0) {
+      setError('No questions found for these filters. Try selecting different options.');
+      return;
+    }
 
-    onStart(quiz);
-  }
+    // Shuffle and take requested count
+    const shuffled = [...questions].sort(() => Math.random() - 0.5);
+    const selected = shuffled.slice(0, Math.min(qCount, shuffled.length));
 
-  const breadcrumb = [subject, grade, strand, subStrand, topic].filter(Boolean).join(' › ');
+    // Apply custom time if set
+    const finalQuestions = selected.map(q => ({
+      ...q,
+      timeLimit: timePerQ > 0 ? timePerQ : q.timeLimit,
+    }));
+
+    const title = subStrand || strandName || subject?.name || 'GES Quiz';
+    const quiz = gesQuestionsToQuiz(
+      finalQuestions, title,
+      subject?.name ?? 'General',
+      grade > 0 ? `Grade ${grade}` : 'All Grades',
+      subject?.coverColor ?? 'from-purple-600 to-indigo-700',
+      subject?.icon ?? '📚'
+    );
+
+    onStartQuiz(quiz as Quiz);
+  };
+
+  const StepIndicator = () => (
+    <div className="flex items-center gap-1 mb-6">
+      {(['subject','strand','substrand','settings'] as Step[]).map((s, i) => (
+        <div key={s} className="flex items-center gap-1">
+          <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-black transition-all ${
+            step === s ? 'bg-purple-500 text-white scale-110' :
+            ['subject','strand','substrand','settings'].indexOf(step) > i ? 'bg-green-500 text-white' :
+            'bg-white/10 text-white/30'
+          }`}>{i + 1}</div>
+          {i < 3 && <div className={`w-8 h-0.5 rounded ${['subject','strand','substrand','settings'].indexOf(step) > i ? 'bg-green-500' : 'bg-white/10'}`}/>}
+        </div>
+      ))}
+      <div className="ml-2 text-white/40 text-xs capitalize">{step}</div>
+    </div>
+  );
 
   return (
-    <div className="min-h-screen bg-[#1a1a2e] flex flex-col">
-      {/* Header */}
-      <div className="bg-[#16213e] px-4 py-4 flex items-center gap-3 border-b border-white/10">
-        <button onClick={step === 'subject' ? onBack : () => {
-          const steps: Step[] = ['subject','grade','strand','substrand','topic','settings'];
-          const idx = steps.indexOf(step);
-          setStep(steps[Math.max(0, idx - 1)]);
-        }} className="text-white/70 hover:text-white text-2xl">←</button>
-        <div>
-          <h1 className="text-white font-bold text-lg">GES Question Bank</h1>
-          {breadcrumb && <p className="text-white/50 text-xs mt-0.5">{breadcrumb}</p>}
-        </div>
-      </div>
+    <div className="min-h-screen bg-[#0d0d1a] flex flex-col">
+      <header className="bg-black/40 border-b border-white/10 px-4 py-3 flex items-center justify-between sticky top-0 z-10">
+        <button onClick={() => {
+          if (step === 'subject') onBack();
+          else if (step === 'strand') setStep('subject');
+          else if (step === 'substrand') setStep('strand');
+          else setStep('substrand');
+        }} className="text-white/50 hover:text-white text-sm flex items-center gap-2 transition-colors">← Back</button>
+        <span className="text-white font-black text-sm">📚 GES Curriculum Quiz</span>
+        <div className="w-16"/>
+      </header>
 
-      <div className="flex-1 overflow-y-auto px-4 py-6">
-        {/* SUBJECT */}
+      <div className="flex-1 max-w-2xl mx-auto w-full px-4 py-6">
+        <StepIndicator/>
+
+        {/* ── STEP 1: Subject ── */}
         {step === 'subject' && (
-          <Section title="Select Subject" emoji="📚">
-            {GES_SUBJECTS.map(s => (
-              <OptionCard key={s} label={s}
-                emoji={s === 'Mathematics' ? '📐' : s === 'English Language' ? '📖' : '🔬'}
-                onClick={() => pick(s, 'grade', setSubject)} />
-            ))}
-          </Section>
+          <div>
+            <h2 className="text-2xl font-black text-white mb-1">Choose a Subject</h2>
+            <p className="text-white/40 text-sm mb-5">GES New Curriculum — Grades 1–9</p>
+            <div className="grid grid-cols-2 gap-3">
+              {GES_SUBJECTS.map(subj => {
+                const total = getGESQuestions({ subject: subj.name }).length;
+                return (
+                  <button key={subj.name}
+                    onClick={() => { setSubject(subj); setStrandName(''); setSubStrand(''); setStep('strand'); }}
+                    className={`bg-gradient-to-br ${subj.coverColor} p-5 rounded-2xl text-left hover:scale-[1.02] active:scale-[0.98] transition-all shadow-lg`}>
+                    <div className="text-4xl mb-3">{subj.icon}</div>
+                    <div className="text-white font-black text-sm mb-1">{subj.name}</div>
+                    <div className="text-white/60 text-xs">{subj.strands.length} strands · {total} questions</div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
         )}
 
-        {/* GRADE */}
-        {step === 'grade' && (
-          <Section title="Select Grade" emoji="🎓">
-            {grades.map(g => (
-              <OptionCard key={g} label={g} emoji="📋"
-                onClick={() => pick(g, 'strand', setGrade)} />
-            ))}
-          </Section>
-        )}
-
-        {/* STRAND */}
-        {step === 'strand' && (
-          <Section title="Select Strand" emoji="🗂️">
-            {strands.map(s => (
-              <OptionCard key={s} label={s} emoji="📌"
-                onClick={() => pick(s, 'substrand', setStrand)} />
-            ))}
-          </Section>
-        )}
-
-        {/* SUB-STRAND */}
-        {step === 'substrand' && (
-          <Section title="Select Sub-Strand" emoji="📎">
-            {subStrands.map(ss => (
-              <OptionCard key={ss} label={ss} emoji="🔖"
-                onClick={() => pick(ss, 'topic', setSubStrand)} />
-            ))}
-          </Section>
-        )}
-
-        {/* TOPIC */}
-        {step === 'topic' && (
-          <Section title="Select Topic" emoji="💡">
-            {topics.map(t => (
-              <OptionCard key={t} label={t} emoji="📝"
-                onClick={() => pick(t, 'settings', setTopic)} />
-            ))}
-          </Section>
-        )}
-
-        {/* SETTINGS */}
-        {step === 'settings' && (
-          <div className="space-y-6">
-            <div className="bg-[#16213e] rounded-2xl p-4 border border-white/10">
-              <p className="text-white/50 text-xs mb-1">Topic</p>
-              <p className="text-white font-bold">{topic}</p>
-              <p className="text-white/50 text-xs mt-1">{availableQuestions.length} questions available</p>
+        {/* ── STEP 2: Strand ── */}
+        {step === 'strand' && subject && (
+          <div>
+            <div className="flex items-center gap-3 mb-5">
+              <div className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${subject.coverColor} flex items-center justify-center text-2xl`}>{subject.icon}</div>
+              <div>
+                <h2 className="text-xl font-black text-white">{subject.name}</h2>
+                <p className="text-white/40 text-sm">Choose a strand (topic area)</p>
+              </div>
             </div>
 
-            {/* Number of Questions */}
-            <SettingSection title="Number of Questions" emoji="🔢">
-              <div className="grid grid-cols-5 gap-2">
-                {QUESTION_COUNTS.map(n => {
-                  const available = availableQuestions.length;
-                  const disabled = n > available;
-                  return (
-                    <button key={n} disabled={disabled}
-                      onClick={() => setQuestionCount(n)}
-                      className={`py-3 rounded-xl font-bold text-sm transition-all ${
-                        questionCount === n
-                          ? 'bg-purple-600 text-white scale-105'
-                          : disabled
-                          ? 'bg-white/5 text-white/20 cursor-not-allowed'
-                          : 'bg-white/10 text-white hover:bg-white/20'
-                      }`}>
-                      {n}
-                    </button>
-                  );
-                })}
+            {/* All topics option */}
+            <button onClick={() => { setStrandName(''); setSubStrand(''); setStep('settings'); }}
+              className="w-full p-4 mb-3 rounded-2xl border-2 border-purple-400/40 bg-purple-400/10 text-left hover:bg-purple-400/20 transition-all flex items-center gap-3">
+              <span className="text-3xl">✨</span>
+              <div>
+                <div className="text-white font-black">All Strands</div>
+                <div className="text-white/40 text-sm">{getGESQuestions({ subject: subject.name }).length} total questions</div>
               </div>
-            </SettingSection>
+              <span className="ml-auto text-purple-400">→</span>
+            </button>
 
-            {/* Time per Question */}
-            <SettingSection title="Time per Question" emoji="⏱️">
-              <div className="grid grid-cols-4 gap-2">
-                {TIME_OPTIONS.map(t => (
-                  <button key={t} onClick={() => setTimeLimit(t)}
-                    className={`py-3 rounded-xl font-bold text-sm transition-all ${
-                      timeLimit === t ? 'bg-purple-600 text-white scale-105' : 'bg-white/10 text-white hover:bg-white/20'
-                    }`}>
-                    {t}s
+            <div className="space-y-2">
+              {subject.strands.map(strand => {
+                const count = getGESQuestions({ subject: subject.name, strand: strand.name }).length;
+                return (
+                  <button key={strand.name}
+                    onClick={() => { setStrandName(strand.name); setSubStrand(''); setStep('substrand'); }}
+                    className="w-full p-4 rounded-2xl border border-white/10 bg-white/4 hover:bg-white/8 text-left transition-all flex items-center gap-3">
+                    <span className="text-2xl">{strand.icon}</span>
+                    <div className="flex-1">
+                      <div className="text-white font-bold text-sm">{strand.name}</div>
+                      <div className="text-white/35 text-xs">{strand.subStrands.length} sub-strands · {count} questions</div>
+                    </div>
+                    <span className="text-white/30">→</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* ── STEP 3: Sub-strand ── */}
+        {step === 'substrand' && subject && selectedStrand && (
+          <div>
+            <div className="flex items-center gap-3 mb-5">
+              <span className="text-3xl">{selectedStrand.icon}</span>
+              <div>
+                <h2 className="text-xl font-black text-white">{selectedStrand.name}</h2>
+                <p className="text-white/40 text-sm">Choose a specific topic</p>
+              </div>
+            </div>
+
+            <button onClick={() => { setSubStrand(''); setStep('settings'); }}
+              className="w-full p-4 mb-3 rounded-2xl border-2 border-purple-400/40 bg-purple-400/10 text-left hover:bg-purple-400/20 transition-all flex items-center gap-3">
+              <span className="text-3xl">✨</span>
+              <div>
+                <div className="text-white font-black">All Topics in {selectedStrand.name}</div>
+                <div className="text-white/40 text-sm">{getGESQuestions({ subject: subject.name, strand: strandName }).length} questions</div>
+              </div>
+              <span className="ml-auto text-purple-400">→</span>
+            </button>
+
+            <div className="space-y-2">
+              {selectedStrand.subStrands.map(ss => {
+                const count = getGESQuestions({ subject: subject.name, strand: strandName, subStrand: ss.name }).length;
+                return (
+                  <button key={ss.name}
+                    onClick={() => { setSubStrand(ss.name); setStep('settings'); }}
+                    className="w-full p-4 rounded-2xl border border-white/10 bg-white/4 hover:bg-white/8 text-left transition-all flex items-center gap-3">
+                    <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: selectedStrand.color }}/>
+                    <div className="flex-1">
+                      <div className="text-white font-bold text-sm">{ss.name}</div>
+                      <div className="text-white/35 text-xs">{count} question{count !== 1 ? 's' : ''}</div>
+                    </div>
+                    <span className="text-white/30">→</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* ── STEP 4: Settings ── */}
+        {step === 'settings' && (
+          <div>
+            <h2 className="text-2xl font-black text-white mb-1">Quiz Settings</h2>
+            <div className="text-white/40 text-sm mb-5">
+              {subject?.name}{strandName ? ` › ${strandName}` : ''}{subStrand ? ` › ${subStrand}` : ''}
+              <span className="ml-2 text-purple-400 font-bold">({availableCount} questions available)</span>
+            </div>
+
+            {/* Grade selector */}
+            <div className="mb-5">
+              <label className="text-white/50 text-xs font-bold tracking-wider uppercase block mb-2">📚 Grade Level</label>
+              <div className="grid grid-cols-2 gap-2">
+                {GRADES.map(g => (
+                  <button key={g.value} onClick={() => setGrade(g.value)}
+                    className={`py-2.5 px-3 rounded-xl border-2 text-sm font-bold transition-all text-left ${grade === g.value ? 'border-purple-400 bg-purple-400/20 text-white' : 'border-white/10 bg-white/4 text-white/50 hover:bg-white/8'}`}>
+                    {g.label}
                   </button>
                 ))}
               </div>
-            </SettingSection>
+            </div>
 
             {/* Difficulty */}
-            <SettingSection title="Difficulty" emoji="🎯">
+            <div className="mb-5">
+              <label className="text-white/50 text-xs font-bold tracking-wider uppercase block mb-2">⚡ Difficulty</label>
               <div className="grid grid-cols-2 gap-2">
                 {DIFFICULTIES.map(d => (
                   <button key={d.value} onClick={() => setDifficulty(d.value)}
-                    className={`py-3 px-4 rounded-xl font-bold text-sm transition-all flex items-center gap-2 ${
-                      difficulty === d.value ? 'bg-purple-600 text-white scale-105' : 'bg-white/10 text-white hover:bg-white/20'
-                    }`}>
-                    <span>{d.emoji}</span> {d.label}
+                    className={`p-3 rounded-xl border-2 text-left transition-all ${difficulty === d.value ? 'border-purple-400 bg-purple-400/20' : 'border-white/10 bg-white/4 hover:bg-white/8'}`}>
+                    <div className="flex items-center gap-2 mb-0.5">
+                      <span>{d.icon}</span>
+                      <span className="text-white font-bold text-xs">{d.label}</span>
+                    </div>
+                    <div className="text-white/35 text-xs">{d.desc}</div>
                   </button>
                 ))}
               </div>
-            </SettingSection>
+            </div>
 
-            {/* Start Button */}
-            <button onClick={buildAndStart}
-              disabled={availableQuestions.length === 0}
-              className="w-full py-4 bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-bold text-lg rounded-2xl shadow-lg hover:scale-105 active:scale-95 transition-all disabled:opacity-40 disabled:cursor-not-allowed">
-              🚀 Start Quiz ({Math.min(questionCount, availableQuestions.length)} Questions)
+            {/* Number of questions */}
+            <div className="mb-5">
+              <label className="text-white/50 text-xs font-bold tracking-wider uppercase block mb-2">🔢 Number of Questions</label>
+              <div className="grid grid-cols-3 gap-2">
+                {QUESTION_COUNTS.map(n => (
+                  <button key={n} onClick={() => setQCount(n)}
+                    className={`py-3 rounded-xl border-2 font-black text-lg transition-all ${qCount === n ? 'border-purple-400 bg-purple-400/20 text-white' : 'border-white/10 bg-white/4 text-white/50 hover:bg-white/8'}`}>
+                    {n}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Time per question */}
+            <div className="mb-6">
+              <label className="text-white/50 text-xs font-bold tracking-wider uppercase block mb-2">⏱️ Time per Question</label>
+              <select value={timePerQ} onChange={e => setTimePerQ(Number(e.target.value))}
+                className="w-full bg-white/8 border border-white/15 text-white rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-400 text-sm">
+                {TIME_OPTIONS.map(t => (
+                  <option key={t.value} value={t.value}>{t.label}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Summary */}
+            <div className="bg-white/5 border border-white/10 rounded-2xl p-4 mb-5">
+              <div className="text-white font-black text-sm mb-3">📋 Quiz Summary</div>
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between"><span className="text-white/40">Subject</span><span className="text-white font-bold">{subject?.name}</span></div>
+                {strandName && <div className="flex justify-between"><span className="text-white/40">Strand</span><span className="text-white font-bold">{strandName}</span></div>}
+                {subStrand && <div className="flex justify-between"><span className="text-white/40">Topic</span><span className="text-white font-bold">{subStrand}</span></div>}
+                <div className="flex justify-between"><span className="text-white/40">Grade</span><span className="text-white font-bold">{grade > 0 ? `Grade ${grade}` : 'All Grades'}</span></div>
+                <div className="flex justify-between"><span className="text-white/40">Difficulty</span><span className="text-white font-bold">{difficulty || 'All Levels'}</span></div>
+                <div className="flex justify-between"><span className="text-white/40">Questions</span><span className="text-purple-400 font-black">{Math.min(qCount, availableCount)} of {availableCount} available</span></div>
+              </div>
+            </div>
+
+            {error && <div className="bg-red-500/10 border border-red-500/25 text-red-400 text-sm px-4 py-3 rounded-xl mb-4">⚠ {error}</div>}
+
+            <button onClick={handleStart} disabled={availableCount === 0}
+              className="w-full py-5 font-black text-white text-xl rounded-2xl hover:scale-[1.02] active:scale-[0.98] transition-all shadow-xl disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center gap-3"
+              style={{ background: 'linear-gradient(135deg,#7c3aed,#4f46e5)', boxShadow: '0 8px 32px rgba(124,58,237,0.4)' }}>
+              🚀 Start Quiz
+              <span className="text-sm bg-white/20 px-3 py-1 rounded-full">
+                {Math.min(qCount, availableCount)} questions
+              </span>
             </button>
           </div>
         )}
       </div>
-    </div>
-  );
-}
-
-function Section({ title, emoji, children }: { title: string; emoji: string; children: React.ReactNode }) {
-  return (
-    <div>
-      <h2 className="text-white font-bold text-xl mb-4">{emoji} {title}</h2>
-      <div className="space-y-3">{children}</div>
-    </div>
-  );
-}
-
-function OptionCard({ label, emoji, onClick }: { label: string; emoji: string; onClick: () => void }) {
-  return (
-    <button onClick={onClick}
-      className="w-full bg-[#16213e] border border-white/10 rounded-2xl p-4 flex items-center gap-4 hover:border-purple-500 hover:bg-[#1e2a4a] transition-all text-left group">
-      <span className="text-2xl">{emoji}</span>
-      <span className="text-white font-medium group-hover:text-purple-300 transition-colors">{label}</span>
-      <span className="ml-auto text-white/30 group-hover:text-purple-400">›</span>
-    </button>
-  );
-}
-
-function SettingSection({ title, emoji, children }: { title: string; emoji: string; children: React.ReactNode }) {
-  return (
-    <div className="bg-[#16213e] rounded-2xl p-4 border border-white/10">
-      <p className="text-white font-bold mb-3">{emoji} {title}</p>
-      {children}
     </div>
   );
 }

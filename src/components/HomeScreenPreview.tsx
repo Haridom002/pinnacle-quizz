@@ -13,6 +13,7 @@ interface Props {
   onEditQuiz?: (q: Quiz) => void;
   onDeleteQuiz?:(q: Quiz) => void;
   onCreateQuiz: () => void;
+  onGESQuiz?: () => void;
   onArena:  () => void;
   onJoinCode: () => void;
   onProfile: () => void;
@@ -33,7 +34,7 @@ const SUBJECT_ICONS: Record<string,string> = {
 };
 
 export default function HomeScreenPreview({
-  user, crestSrc, onStartQuiz, onViewQuiz, onCreateQuiz,
+  user, crestSrc, onStartQuiz, onViewQuiz, onCreateQuiz, onGESQuiz,
   onArena, onJoinCode, onSignOut, onProfile, onStats, onSettings, onEditQuiz, onDeleteQuiz, quizzes: propQuizzes,
 }: Props) {
   const [search,    setSearch]    = useState('');
@@ -220,6 +221,7 @@ export default function HomeScreenPreview({
               <button onClick={onArena} className="flex items-center justify-center gap-2 bg-gradient-to-r from-yellow-500 to-orange-500 text-black font-black px-6 py-3.5 rounded-2xl text-base hover:scale-105 active:scale-95 transition-all shadow-xl shadow-yellow-500/25">⚡ Math Arena</button>
               <button onClick={onJoinCode} className="flex items-center justify-center gap-2 bg-yellow-500/15 border-2 border-yellow-500/40 text-yellow-300 font-black px-6 py-3.5 rounded-2xl text-base hover:border-yellow-400 hover:bg-yellow-500/25 transition-all">🎮 Join with Code</button>
               {user?.role !== 'parent' && <button onClick={onCreateQuiz} className="flex items-center justify-center gap-2 bg-white/8 border border-white/15 text-white font-bold px-6 py-3.5 rounded-2xl text-base hover:bg-white/12 transition-all">+ Create Quiz</button>}
+              {onGESQuiz && <button onClick={onGESQuiz} className="flex items-center justify-center gap-2 bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-bold px-6 py-3.5 rounded-2xl text-base hover:scale-[1.02] transition-all shadow-lg">📚 GES Curriculum</button>}
             </div>
             <div className="relative max-w-md mx-auto">
               <span className="absolute left-4 top-1/2 -translate-y-1/2 text-white/25">🔍</span>

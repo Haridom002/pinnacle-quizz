@@ -1,13 +1,11 @@
 import { useState, useRef } from 'react';
 import { Quiz, Question, Answer } from '../types';
 import { SUBJECTS, GRADE_LEVELS, QUIZ_COVER_COLORS, ANSWER_COLORS, ANSWER_ICONS } from '../data/quizzes';
-import { saveQuizToDb, isSupabaseConfigured } from '../lib/supabase';
 
 interface QuizBuilderProps {
   initialQuiz?: Quiz;
   onSave: (quiz: Quiz) => void;
   onBack: () => void;
-  userId?: string;
 }
 
 function generateId() {
@@ -31,7 +29,7 @@ function makeEmptyQuestion(_index: number): Question {
   };
 }
 
-export default function QuizBuilder({ initialQuiz, onSave, onBack, userId }: QuizBuilderProps) {
+export default function QuizBuilder({ initialQuiz, onSave, onBack }: QuizBuilderProps) {
   const [title, setTitle] = useState(initialQuiz?.title ?? '');
   const [description, setDescription] = useState(initialQuiz?.description ?? '');
   const [subject, setSubject] = useState(initialQuiz?.subject ?? 'Mathematics');
@@ -219,19 +217,14 @@ export default function QuizBuilder({ initialQuiz, onSave, onBack, userId }: Qui
 
   function addQuestion() {
     const newQ = makeEmptyQuestion(questions.length);
-    setQuestions((qs) => {
-      setActiveQuestionIndex(qs.length);
-      return [...qs, newQ];
-    });
+    setQuestions((qs) => [...qs, newQ]);
+    setActiveQuestionIndex(questions.length);
   }
 
   function removeQuestion(index: number) {
     if (questions.length === 1) return;
-    setQuestions((qs) => {
-      const updated = qs.filter((_, i) => i !== index);
-      setActiveQuestionIndex(Math.max(0, Math.min(index, updated.length - 1)));
-      return updated;
-    });
+    setQuestions((qs) => qs.filter((_, i) => i !== index));
+    setActiveQuestionIndex(Math.max(0, index - 1));
   }
 
   function validate(): boolean {
@@ -250,7 +243,7 @@ export default function QuizBuilder({ initialQuiz, onSave, onBack, userId }: Qui
     return Object.keys(errs).length === 0;
   }
 
-  async function handleSave() {
+  function handleSave() {
     if (!validate()) return;
     const quiz: Quiz = {
       id: generateId(),
@@ -265,46 +258,6 @@ export default function QuizBuilder({ initialQuiz, onSave, onBack, userId }: Qui
       playCount: 0,
     };
     setSaved(true);
-
-    // Save to Supabase if configured and user is logged in
-    console.log('💾 Save attempt — isSupabaseConfigured:', isSupabaseConfigured, '| userId:', userId);
-    if (isSupabaseConfigured && userId) {
-      try {
-        const dbQuestions = questions.map((q, i) => ({
-          position: i,
-          text: q.text,
-          type: q.type,
-          time_limit: q.timeLimit,
-          points: q.points,
-          explanation: q.explanation ?? '',
-          answers: q.answers.map((a, j) => ({
-            position: j,
-            text: a.text,
-            is_correct: a.isCorrect,
-            color: a.color,
-            icon: a.icon,
-          })),
-        }));
-        await saveQuizToDb(
-          {
-            title,
-            description,
-            subject,
-            grade,
-            cover_color: coverColor,
-            icon: coverIcon,
-            is_public: true,
-          },
-          dbQuestions,
-          userId
-        );
-      } catch (err) {
-        console.error('❌ Failed to save quiz to Supabase:', err);
-      }
-    } else {
-      console.warn('⚠️ Skipped Supabase save — isSupabaseConfigured:', isSupabaseConfigured, '| userId:', userId);
-    }
-
     setTimeout(() => onSave(quiz), 800);
   }
 

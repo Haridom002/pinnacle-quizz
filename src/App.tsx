@@ -1,8 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Quiz, Player, PlayerAnswer } from './types';
 import { SAMPLE_QUIZZES } from './data/quizzes';
-import { fetchPublicQuizzes, isSupabaseConfigured } from './lib/supabase';
-import { useAuth } from './contexts/AuthContext';
 import { generateGameCode, simulateBotAnswer, calculatePoints, getStreakMultiplier } from './utils/gameUtils';
 import HomeScreen from './components/HomeScreen';
 import QuizDetail from './components/QuizDetail';
@@ -11,7 +9,6 @@ import QuestionScreen from './components/QuestionScreen';
 import Leaderboard from './components/Leaderboard';
 import Podium from './components/Podium';
 import QuizBuilder from './components/QuizBuilder';
-import GESQuizSelector from './components/GESQuizSelector';
 import ArenaHub from './components/ArenaHub';
 import LightningCalculator from './components/LightningCalculator';
 import FormationMode from './components/FormationMode';
@@ -20,56 +17,12 @@ import ArenaHostMode from './components/ArenaHostMode';
 
 type AppPhase =
   | 'home' | 'lobby' | 'question' | 'leaderboard' | 'podium'
-  | 'quiz-builder' | 'ges-selector' | 'quiz-detail'
+  | 'quiz-builder' | 'quiz-detail'
   | 'arena-hub' | 'lightning-calc' | 'formation-mode' | 'tug-war' | 'arena-host';
 
 export default function App() {
-  const { user, session } = useAuth();
   const [phase, setPhase]               = useState<AppPhase>('home');
-  const [quizLibrary, setQuizzes]       = useState<Quiz[]>([]);
-
-  // Load quizzes from Supabase on mount
-  useEffect(() => {
-    console.log('🔍 isSupabaseConfigured:', isSupabaseConfigured);
-    if (!isSupabaseConfigured) { console.error('❌ Supabase not configured — check VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in Vercel'); return; }
-    fetchPublicQuizzes().then(dbQuizzes => {
-      console.log('📦 quizzes from Supabase:', dbQuizzes.length, dbQuizzes);
-      const mapped: Quiz[] = dbQuizzes.map(q => {
-        const questions = (q.questions ?? [])
-          .sort((a, b) => a.position - b.position)
-          .map(qq => ({
-            id: qq.id,
-            text: qq.text,
-            type: qq.type as any,
-            timeLimit: qq.time_limit,
-            points: qq.points,
-            explanation: qq.explanation ?? '',
-            answers: (qq.answers ?? [])
-              .sort((a, b) => a.position - b.position)
-              .map(a => ({
-                id: a.id,
-                text: a.text,
-                isCorrect: a.is_correct,
-                color: a.color,
-                icon: a.icon,
-              })),
-          }));
-        return {
-          id: q.id,
-          title: q.title,
-          description: q.description,
-          subject: q.subject,
-          grade: q.grade,
-          coverColor: q.cover_color,
-          icon: q.icon,
-          playCount: q.play_count,
-          createdAt: q.created_at?.split('T')[0] ?? '',
-          questions,
-        };
-      });
-      setQuizzes(mapped);
-    });
-  }, []);
+  const [quizLibrary, setQuizzes]       = useState<Quiz[]>(SAMPLE_QUIZZES);
   const [selectedQuiz, setSelectedQuiz] = useState<Quiz | null>(null);
   const [gameCode, setGameCode]         = useState('');
   const [currentPlayer, setCurrentPlayer] = useState<Player | null>(null);
@@ -137,8 +90,7 @@ export default function App() {
   if (phase === 'lightning-calc') return <LightningCalculator onBack={() => setPhase('arena-hub')} />;
   if (phase === 'formation-mode') return <FormationMode onBack={() => setPhase('arena-hub')} />;
   if (phase === 'tug-war')        return <TugOfWar onBack={() => setPhase('arena-hub')} />;
-  if (phase === 'ges-selector')   return <GESQuizSelector onStart={q => { setSelectedQuiz(q); setPhase('lobby'); }} onBack={() => setPhase('home')} />;
-  if (phase === 'quiz-builder')   return <QuizBuilder userId={user?.id ?? session?.user?.id} onSave={q => { setQuizzes(p => [q, ...p]); setTimeout(() => setPhase('home'), 800); }} onBack={() => setPhase('home')} />;
+  if (phase === 'quiz-builder')   return <QuizBuilder onSave={q => { setQuizzes(p => [q, ...p]); setTimeout(() => setPhase('home'), 800); }} onBack={() => setPhase('home')} />;
 
   if (phase === 'quiz-detail' && selectedQuiz)
     return <QuizDetail quiz={selectedQuiz} onPlay={() => { setGameCode(generateGameCode()); setPhase('lobby'); }} onBack={() => setPhase('home')} />;
@@ -163,7 +115,7 @@ export default function App() {
     <HomeScreen
       onStartQuiz={q => { setSelectedQuiz(q); setGameCode(generateGameCode()); setPhase('lobby'); }}
       onViewQuiz={q => { setSelectedQuiz(q); setPhase('quiz-detail'); }}
-      onCreateQuiz={() => setPhase('ges-selector')}
+      onCreateQuiz={() => setPhase('quiz-builder')}
       onArena={() => setPhase('arena-hub')}
       quizzes={quizLibrary}
     />
