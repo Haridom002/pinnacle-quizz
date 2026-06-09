@@ -2,12 +2,12 @@ import { useState, useRef } from 'react';
 import { Quiz, Question, Answer } from '../types';
 import { SUBJECTS, GRADE_LEVELS, QUIZ_COVER_COLORS, ANSWER_COLORS, ANSWER_ICONS } from '../data/quizzes';
 import { saveQuizToDb, isSupabaseConfigured } from '../lib/supabase';
-import { useAuth } from '../contexts/AuthContext';
 
 interface QuizBuilderProps {
   initialQuiz?: Quiz;
   onSave: (quiz: Quiz) => void;
   onBack: () => void;
+  userId?: string;
 }
 
 function generateId() {
@@ -31,8 +31,7 @@ function makeEmptyQuestion(_index: number): Question {
   };
 }
 
-export default function QuizBuilder({ initialQuiz, onSave, onBack }: QuizBuilderProps) {
-  const { user } = useAuth();
+export default function QuizBuilder({ initialQuiz, onSave, onBack, userId }: QuizBuilderProps) {
   const [title, setTitle] = useState(initialQuiz?.title ?? '');
   const [description, setDescription] = useState(initialQuiz?.description ?? '');
   const [subject, setSubject] = useState(initialQuiz?.subject ?? 'Mathematics');
@@ -268,7 +267,7 @@ export default function QuizBuilder({ initialQuiz, onSave, onBack }: QuizBuilder
     setSaved(true);
 
     // Save to Supabase if configured and user is logged in
-    if (isSupabaseConfigured && user?.id) {
+    if (isSupabaseConfigured && userId) {
       try {
         const dbQuestions = questions.map((q, i) => ({
           position: i,
@@ -296,7 +295,7 @@ export default function QuizBuilder({ initialQuiz, onSave, onBack }: QuizBuilder
             is_public: true,
           },
           dbQuestions,
-          user.id
+          userId
         );
       } catch (err) {
         console.error('Failed to save quiz to Supabase:', err);

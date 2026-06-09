@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Quiz, Player, PlayerAnswer } from './types';
 import { SAMPLE_QUIZZES } from './data/quizzes';
 import { fetchPublicQuizzes, isSupabaseConfigured } from './lib/supabase';
+import { useAuth } from './contexts/AuthContext';
 import { generateGameCode, simulateBotAnswer, calculatePoints, getStreakMultiplier } from './utils/gameUtils';
 import HomeScreen from './components/HomeScreen';
 import QuizDetail from './components/QuizDetail';
@@ -22,6 +23,7 @@ type AppPhase =
   | 'arena-hub' | 'lightning-calc' | 'formation-mode' | 'tug-war' | 'arena-host';
 
 export default function App() {
+  const { user } = useAuth();
   const [phase, setPhase]               = useState<AppPhase>('home');
   const [quizLibrary, setQuizzes]       = useState<Quiz[]>(SAMPLE_QUIZZES);
 
@@ -133,7 +135,7 @@ export default function App() {
   if (phase === 'lightning-calc') return <LightningCalculator onBack={() => setPhase('arena-hub')} />;
   if (phase === 'formation-mode') return <FormationMode onBack={() => setPhase('arena-hub')} />;
   if (phase === 'tug-war')        return <TugOfWar onBack={() => setPhase('arena-hub')} />;
-  if (phase === 'quiz-builder')   return <QuizBuilder onSave={q => { setQuizzes(p => [q, ...p]); setTimeout(() => setPhase('home'), 800); }} onBack={() => setPhase('home')} />;
+  if (phase === 'quiz-builder')   return <QuizBuilder userId={user?.id} onSave={q => { setQuizzes(p => [q, ...p]); setTimeout(() => setPhase('home'), 800); }} onBack={() => setPhase('home')} />;
 
   if (phase === 'quiz-detail' && selectedQuiz)
     return <QuizDetail quiz={selectedQuiz} onPlay={() => { setGameCode(generateGameCode()); setPhase('lobby'); }} onBack={() => setPhase('home')} />;
