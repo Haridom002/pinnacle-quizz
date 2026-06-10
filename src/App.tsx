@@ -1,4 +1,3 @@
-// v2
 import { useState, useEffect, useCallback } from 'react';
 import { Quiz, Player, PlayerAnswer } from './types';
 import { SAMPLE_QUIZZES } from './data/quizzes';
