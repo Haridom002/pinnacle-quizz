@@ -898,3 +898,591 @@ export function gesQuestionsToQuiz(
     }))
   };
 }
+
+// ─────────────────────────────────────────────────────────────
+// ADDITIONAL MATHEMATICS QUESTIONS (to reach 100+)
+// ─────────────────────────────────────────────────────────────
+// These are added via a patch function at the bottom
+
+const MATHS_EXTRA: GESQuestion[] = [
+  q('What is 9 × 9?','72,81,90,63'.split(','),1,'9 × 9 = 81. Times tables: 9×1=9...9×9=81.','beginner',3,M,'Number','Operations'),
+  q('What is 144 ÷ 12?','11,12,13,14'.split(','),1,'144 ÷ 12 = 12. (12 × 12 = 144)','intermediate',5,M,'Number','Operations'),
+  q('What is 15% of 200?','25,30,35,40'.split(','),1,'15% of 200 = (15/100)×200 = 30.','intermediate',6,M,'Number','Decimals and Percentages'),
+  q('What is 2/5 + 3/10?','5/15,7/10,1/2,5/10'.split(','),1,'2/5=4/10. 4/10+3/10=7/10.','intermediate',5,M,'Number','Fractions'),
+  q('Simplify 18/24.','3/4,2/3,9/12,6/8'.split(','),0,'GCF=6. 18/24=3/4.','intermediate',5,M,'Number','Fractions'),
+  q('What is 4³?','12,32,64,48'.split(','),2,'4³=4×4×4=16×4=64.','intermediate',7,M,'Algebra','Indices and Logarithms'),
+  q('Solve: 5x = 45','x=7,x=8,x=9,x=10'.split(','),2,'x=45÷5=9.','beginner',5,M,'Algebra','Variables and Equations'),
+  q('What is the perimeter of a regular pentagon with side 6cm?','24cm,30cm,36cm,18cm'.split(','),1,'5 sides × 6cm = 30cm.','intermediate',5,M,'Geometry','Perimeter and Area'),
+  q('Find the area of a parallelogram with base 8cm and height 5cm.','13cm²,40cm²,26cm²,80cm²'.split(','),1,'Area=base×height=8×5=40cm².','intermediate',7,M,'Geometry','Perimeter and Area'),
+  q('What is the surface area of a cube with side 4cm?','48cm²,64cm²,96cm²,24cm²'.split(','),2,'Surface area=6×side²=6×16=96cm².','advanced',8,M,'Geometry','Volume'),
+  q('What is 1000ml in litres?','0.1L,10L,1L,100L'.split(','),2,'1000ml=1 litre.','beginner',3,M,'Measurement','Length Mass and Capacity'),
+  q('How many seconds are in one minute?','30,60,100,120'.split(','),1,'60 seconds = 1 minute.','beginner',1,M,'Measurement','Time'),
+  q('A train leaves at 8:45am and arrives at 11:20am. How long is the journey?','2h 25min,2h 35min,3h 25min,3h 35min'.split(','),1,'8:45→11:20: 8:45→11:45=3hrs, minus 25min=2h35min.','intermediate',6,M,'Measurement','Time'),
+  q('What is the median of: 11,3,7,15,9?','7,9,11,3'.split(','),1,'Arranged: 3,7,9,11,15. Middle=9.','intermediate',6,M,'Statistics','Data Collection and Representation'),
+  q('What is the mean of 4,6,8,10,12?','7,8,9,10'.split(','),1,'Sum=40, Count=5. Mean=40÷5=8.','intermediate',5,M,'Statistics','Data Collection and Representation'),
+  q('P(certain event) = ?','0,1/2,1,Cannot tell'.split(','),2,'A certain event always happens. P=1.','beginner',6,M,'Statistics','Probability'),
+  q('What is 3/8 as a decimal?','0.38,0.375,3.8,0.3'.split(','),1,'3÷8=0.375.','intermediate',6,M,'Number','Decimals and Percentages'),
+  q('What is 45% as a fraction in lowest terms?','45/100,9/20,4/5,1/2'.split(','),1,'45/100=9/20 (divide by 5).','intermediate',6,M,'Number','Decimals and Percentages'),
+  q('What is −8 + (−4)?','4,−4,12,−12'.split(','),3,'−8+(−4)=−8−4=−12.','intermediate',7,M,'Number','Integers and Directed Numbers'),
+  q('Simplify: 5x − 2x + 3x','6x,8x,4x,10x'.split(','),0,'5x−2x+3x=(5−2+3)x=6x.','beginner',6,M,'Algebra','Variables and Equations'),
+  q('What is the gradient of the line y=3x+2?','2,3,5,1'.split(','),1,'In y=mx+c, m is the gradient. Here m=3.','advanced',9,M,'Algebra','Variables and Equations'),
+  q('Two angles of a triangle are 60° and 80°. Find the third.','30°,40°,50°,60°'.split(','),1,'Third angle=180°−60°−80°=40°.','beginner',4,M,'Geometry','Shapes'),
+  q('What type of angle is 135°?','Acute,Right,Obtuse,Reflex'.split(','),2,'Obtuse angles are between 90° and 180°.','beginner',4,M,'Geometry','Shapes'),
+  q('An exterior angle of a regular hexagon is?','45°,60°,72°,90°'.split(','),1,'Exterior angle=360°÷6=60°.','advanced',8,M,'Geometry','Shapes'),
+  q('What is the value of π (pi) approximately?','2.71,3.14,3.41,3.17'.split(','),1,'π≈3.14159... commonly approximated as 3.14 or 22/7.','intermediate',6,M,'Geometry','Perimeter and Area'),
+  q('A rectangle has area 48cm² and length 8cm. Find the width.','4cm,5cm,6cm,7cm'.split(','),2,'Width=Area÷length=48÷8=6cm.','intermediate',5,M,'Geometry','Perimeter and Area'),
+  q('Convert 3/4 to a decimal.','0.25,0.5,0.75,0.34'.split(','),2,'3÷4=0.75.','beginner',4,M,'Number','Decimals and Percentages'),
+  q('What is 0.1 × 0.1?','0.1,0.01,0.001,1'.split(','),1,'0.1×0.1=0.01. (1×1=1, 2 decimal places → 0.01)','intermediate',5,M,'Number','Decimals and Percentages'),
+  q('Solve: 2(x+3)=14','x=3,x=4,x=5,x=6'.split(','),2,'2x+6=14, 2x=8, x=4. Wait: 2×4+6=14. x=4.','intermediate',7,M,'Algebra','Variables and Equations'),
+  q('What is the nth term of 5,10,15,20,...?','n+5,5n,5n+1,n+4'.split(','),1,'Each term is 5×n. When n=1:5, n=2:10. nth term=5n.','intermediate',7,M,'Algebra','Patterns and Sequences'),
+  q('Find x: x/4 = 7','x=3,x=11,x=28,x=7'.split(','),2,'x=7×4=28.','intermediate',5,M,'Algebra','Variables and Equations'),
+  q('A bicycle wheel has radius 35cm. How far does it travel in one revolution? (π=22/7)','110cm,200cm,220cm,250cm'.split(','),2,'Circumference=2πr=2×(22/7)×35=220cm.','advanced',8,M,'Geometry','Perimeter and Area'),
+  q('What is the probability of rolling a 6 on a fair die?','1/3,1/4,1/6,1/2'.split(','),2,'P(6)=1/6. One favourable out of 6 possible outcomes.','beginner',6,M,'Statistics','Probability'),
+  q('A bag has 5 red, 3 blue, 2 green balls. P(green)?','1/10,2/10,3/10,5/10'.split(','),1,'P(green)=2/10=1/5.','intermediate',7,M,'Statistics','Probability'),
+  q('What is 20% of 350?','60,70,80,90'.split(','),1,'20% of 350=(20/100)×350=70.','intermediate',5,M,'Number','Decimals and Percentages'),
+  q('If a:b=3:4 and a=12, find b.','14,16,18,20'.split(','),1,'a/b=3/4. 12/b=3/4. b=16.','intermediate',7,M,'Number','Ratio and Proportion'),
+  q('The bearing of B from A is 060°. What is the back bearing?','120°,180°,240°,300°'.split(','),2,'Back bearing=060°+180°=240°.','advanced',9,M,'Geometry','Shapes'),
+  q('What is 5! (5 factorial)?','20,60,100,120'.split(','),3,'5!=5×4×3×2×1=120.','advanced',9,M,'Algebra','Indices and Logarithms'),
+  q('Expand (x+3)(x+2).','x²+5x+6,x²+6x+5,x²+5x+5,x²+6x+6'.split(','),0,'(x+3)(x+2)=x²+2x+3x+6=x²+5x+6.','advanced',9,M,'Algebra','Quadratic Equations'),
+  q('Solve: x² + 5x + 6 = 0','x=2,x=3|x=−2,x=−3|x=2,x=−3|x=−2,x=3'.split('|'),1,'(x+2)(x+3)=0. x=−2 or x=−3.','advanced',9,M,'Algebra','Quadratic Equations'),
+  q('What is tan 45°?','0,1/2,√3,1'.split(','),3,'tan 45°=1. (opposite/adjacent in a right triangle)','advanced',9,M,'Geometry','Shapes'),
+  q('Simple interest on GH₵500 at 8% for 2 years?','GH₵40,GH₵60,GH₵80,GH₵100'.split(','),2,'SI=PRT/100=500×8×2/100=GH₵80.','intermediate',8,M,'Number','Ratio and Proportion'),
+];
+
+// ─────────────────────────────────────────────────────────────
+// ADDITIONAL SCIENCE QUESTIONS
+// ─────────────────────────────────────────────────────────────
+const SCIENCE_EXTRA: GESQuestion[] = [
+  q('What is the chemical formula of common salt?','NaOH,NaCl,KCl,MgCl'.split(','),1,'Common salt is sodium chloride: Na (sodium) + Cl (chlorine) = NaCl.','intermediate',6,S,'Materials and Matter','Mixtures and Solutions'),
+  q('What gas makes up most of our atmosphere?','Oxygen,Carbon dioxide,Nitrogen,Hydrogen'.split(','),2,'Nitrogen makes up ~78% of the atmosphere. Oxygen is ~21%.','intermediate',5,S,'Earth and Space','Weather and Climate'),
+  q('What is the process of water vapour turning into water droplets called?','Evaporation,Condensation,Precipitation,Transpiration'.split(','),1,'Condensation: water vapour cools → liquid water. Seen on cold glasses.','beginner',4,S,'Materials and Matter','States of Matter'),
+  q('What is osmosis?','Movement of solute particles,Movement of water through a semi-permeable membrane,Evaporation,Digestion'.split(','),1,'Osmosis: water moves from dilute to concentrated solution through a semi-permeable membrane.','advanced',8,S,'Living Things and Life Processes','Cells'),
+  q('What is the main function of red blood cells?','Fight infection,Carry oxygen,Clot blood,Produce hormones'.split(','),1,'Red blood cells (erythrocytes) contain haemoglobin which carries oxygen to body tissues.','intermediate',7,S,'Living Things and Life Processes','Human Body Systems'),
+  q('Which planet is known as the Red Planet?','Jupiter,Mars,Venus,Saturn'.split(','),1,'Mars appears red due to iron oxide (rust) on its surface.','beginner',4,S,'Earth and Space','Solar System'),
+  q('What is the speed of light?','300,000 km/s,3,000 km/s,30,000 km/s,3,000,000 km/s'.split(','),0,'Light travels at approximately 300,000 km/s (3×10⁸ m/s) in a vacuum.','advanced',9,S,'Energy','Forms of Energy'),
+  q('What is a food web?','A single food chain,A network of interconnected food chains,A spider\'s food,A type of fishing net'.split(','),1,'A food web shows multiple interconnected food chains in an ecosystem.','intermediate',6,S,'Living Things and Life Processes','Animals'),
+  q('Which gas is essential for respiration?','Nitrogen,Carbon dioxide,Oxygen,Hydrogen'.split(','),2,'Oxygen is needed by cells for aerobic respiration to produce energy.','beginner',4,S,'Living Things and Life Processes','Human Body Systems'),
+  q('What is the unit of electric current?','Volt,Watt,Ampere,Ohm'.split(','),2,'Electric current is measured in Amperes (A), named after André-Marie Ampère.','intermediate',7,S,'Energy','Forces and Motion'),
+  q('What law states: For every action there is an equal and opposite reaction?','Newton\'s 1st Law,Newton\'s 2nd Law,Newton\'s 3rd Law,Ohm\'s Law'.split(','),2,'Newton\'s Third Law: action and reaction are equal in magnitude but opposite in direction.','advanced',9,S,'Energy','Forces and Motion'),
+  q('What is the function of white blood cells?','Carry oxygen,Fight infection and disease,Carry nutrients,Clot blood'.split(','),1,'White blood cells (leucocytes) are part of the immune system — they fight bacteria and viruses.','intermediate',6,S,'Living Things and Life Processes','Human Body Systems'),
+  q('What is photosynthesis?','Animals making food,Plants using sunlight to make food from CO₂ and water,Animals breathing,Plants breathing'.split(','),1,'Photosynthesis: 6CO₂+6H₂O+light→C₆H₁₂O₆+6O₂.','beginner',4,S,'Living Things and Life Processes','Plants'),
+  q('What is the powerhouse of the cell?','Nucleus,Ribosome,Mitochondria,Vacuole'.split(','),2,'Mitochondria produce ATP (energy) through cellular respiration.','intermediate',7,S,'Living Things and Life Processes','Cells'),
+  q('What instrument measures atmospheric pressure?','Thermometer,Barometer,Anemometer,Hygrometer'.split(','),1,'A barometer measures atmospheric pressure. Invented by Torricelli.','intermediate',7,S,'Earth and Space','Weather and Climate'),
+  q('Which type of rock is formed from cooled magma?','Sedimentary,Metamorphic,Igneous,Limestone'.split(','),2,'Igneous rocks form when magma (molten rock) cools and solidifies.','intermediate',7,S,'Earth and Space','Weather and Climate'),
+  q('What is Newton\'s 1st Law of Motion?','F=ma,Every action has equal reaction,Objects remain at rest or uniform motion unless acted on by force,Energy cannot be created or destroyed'.split(','),2,'Newton\'s 1st Law (Inertia): objects resist changes in their state of motion.','advanced',9,S,'Energy','Forces and Motion'),
+  q('What is the pH of pure water?','3,7,11,14'.split(','),1,'Pure water has a pH of 7 — it is neutral (neither acidic nor alkaline).','intermediate',7,S,'Materials and Matter','Mixtures and Solutions'),
+  q('Which vitamin is found in citrus fruits and prevents scurvy?','Vitamin A,Vitamin B,Vitamin C,Vitamin D'.split(','),2,'Vitamin C (ascorbic acid) is found in oranges, lemons, mangoes. Deficiency causes scurvy.','beginner',5,S,'Living Things and Life Processes','Human Body Systems'),
+  q('What is the function of the stomach?','Absorb nutrients,Store and digest food with acids and enzymes,Produce bile,Filter blood'.split(','),1,'The stomach mixes food with hydrochloric acid and enzymes to begin protein digestion.','intermediate',6,S,'Living Things and Life Processes','Human Body Systems'),
+  q('What is an ecosystem?','A type of animal,A community of living organisms and their physical environment,A food chain,A biome'.split(','),1,'An ecosystem includes all living organisms (biotic) and non-living factors (abiotic) in an area.','intermediate',7,S,'Living Things and Life Processes','Animals'),
+  q('What does a compass needle point to?','True North,Magnetic North,South,East'.split(','),1,'A compass needle points to magnetic north due to Earth\'s magnetic field.','beginner',4,S,'Earth and Space','Solar System'),
+  q('What is biodiversity?','The number of plants only,The variety of life (species, genes, ecosystems) in an area,A type of farming,A type of pollution'.split(','),1,'Biodiversity = the variety of all life forms in an area, including plants, animals, fungi and microbes.','advanced',8,S,'Living Things and Life Processes','Animals'),
+  q('What is the ozone layer?','A layer of ocean water,A layer of O₃ in the stratosphere protecting Earth from UV rays,A type of cloud,A layer of soil'.split(','),1,'The ozone (O₃) layer in the stratosphere absorbs harmful ultraviolet radiation from the sun.','advanced',8,S,'Earth and Space','Weather and Climate'),
+  q('What is the boiling point of water in Kelvin?','273K,373K,100K,473K'.split(','),1,'0°C=273K. Boiling point=100°C=100+273=373K.','advanced',9,S,'Materials and Matter','States of Matter'),
+  q('What is genetic material called?','RNA only,DNA,Protein,Lipids'.split(','),1,'DNA (deoxyribonucleic acid) carries genetic information in chromosomes in the nucleus.','advanced',9,S,'Living Things and Life Processes','Cells'),
+  q('What is the process by which organisms produce offspring?','Respiration,Reproduction,Photosynthesis,Digestion'.split(','),1,'Reproduction is the biological process by which organisms produce new individuals of the same species.','beginner',4,S,'Living Things and Life Processes','Plants'),
+  q('Sound travels fastest through which medium?','Vacuum,Air,Water,Steel'.split(','),3,'Sound travels fastest through solids (steel ~5,100m/s) > liquids > gases. Cannot travel through vacuum.','advanced',8,S,'Energy','Forms of Energy'),
+  q('What is the acceleration due to gravity on Earth?','5m/s²,9.8m/s²,12m/s²,15m/s²'.split(','),1,'g = 9.8 m/s² (approximately 10 m/s² for easy calculations).','advanced',9,S,'Energy','Forces and Motion'),
+  q('Which blood type is the universal donor?','A,B,AB,O'.split(','),3,'Blood type O negative is the universal donor — it can be given to anyone.','advanced',9,S,'Living Things and Life Processes','Human Body Systems'),
+];
+
+// ─────────────────────────────────────────────────────────────
+// ADDITIONAL ENGLISH QUESTIONS
+// ─────────────────────────────────────────────────────────────
+const ENGLISH_EXTRA: GESQuestion[] = [
+  q('Which of the following is a proper noun?','Book,City,Accra,School'.split(','),2,'Proper nouns name specific people, places, or things and begin with capital letters. Accra is a specific city.','beginner',3,E,'Reading and Writing','Grammar'),
+  q('What is the past tense of "run"?','Runned,Runs,Ran,Running'.split(','),2,'Run has an irregular past tense: run → ran.','beginner',3,E,'Reading and Writing','Grammar'),
+  q('What is the future tense of "I eat"?','I ate,I am eating,I will eat,I have eaten'.split(','),2,'Future tense uses "will" + verb: I will eat.','beginner',3,E,'Reading and Writing','Grammar'),
+  q('What punctuation mark ends a question?','Full stop,Comma,Question mark,Exclamation mark'.split(','),2,'Questions end with a question mark (?).','beginner',2,E,'Reading and Writing','Grammar'),
+  q('Which word is an adjective in: "The tall girl ran quickly"?','girl,ran,tall,quickly'.split(','),2,'"Tall" describes the noun (girl) → it is an adjective.','beginner',3,E,'Reading and Writing','Grammar'),
+  q('What is the comparative of "big"?','More big,Biggest,Bigger,Biger'.split(','),2,'One-syllable adjectives: add -er for comparative. big → bigger.','intermediate',4,E,'Reading and Writing','Grammar'),
+  q('What is the superlative of "beautiful"?','More beautiful,Beautifulest,Beautifuller,Most beautiful'.split(','),3,'Long adjectives use most/least. beautiful → most beautiful.','intermediate',5,E,'Reading and Writing','Grammar'),
+  q('Identify the preposition: "The book is on the table."','book,is,on,table'.split(','),2,'Prepositions show position/relationship. "On" shows where the book is relative to the table.','intermediate',4,E,'Reading and Writing','Grammar'),
+  q('What does "etc." stand for?','End the chapter,Et cetera (and so on),Extra text continues,Every thing complete'.split(','),1,'Etc. = et cetera (Latin) meaning "and other things" or "and so on".','intermediate',5,E,'Reading and Writing','Vocabulary'),
+  q('What is alliteration?','Words that rhyme,Repetition of the same consonant sound at the start of nearby words,A very long word,A type of poem'.split(','),1,'Alliteration: "Peter Piper picked a peck of pickled peppers." Repeating the "p" sound.','intermediate',6,E,'Reading and Writing','Comprehension'),
+  q('What is the meaning of "commence"?','Finish,Begin/Start,Continue,Delay'.split(','),1,'"Commence" is a formal word meaning to begin or start.','advanced',7,E,'Reading and Writing','Vocabulary'),
+  q('What is a clause?','A type of punctuation,A group of words containing a subject and verb,A paragraph,A type of poem'.split(','),1,'A clause contains a subject and a predicate (verb). E.g. "She reads" is a clause.','intermediate',6,E,'Reading and Writing','Grammar'),
+  q('Which sentence is correct?','Their going there,They\'re going their,They\'re going there,Their going they\'re'.split(','),2,'They\'re=they are (contraction). There=a place. "They\'re going there" is correct.','intermediate',6,E,'Reading and Writing','Grammar'),
+  q('What is the meaning of "aquatic"?','Related to fire,Related to water,Related to land,Related to air'.split(','),1,'"Aquatic" means relating to water. E.g. aquatic animals live in water.','intermediate',5,E,'Reading and Writing','Vocabulary'),
+  q('What is hyperbole?','A factual statement,An extreme exaggeration for effect,A word that sounds like what it describes,A comparison using like/as'.split(','),1,'Hyperbole is exaggeration: "I\'ve told you a million times!" is hyperbole.','advanced',7,E,'Reading and Writing','Comprehension'),
+  q('What is the plural of "ox"?','Oxes,Oxen,Ox\'s,Ox'.split(','),1,'"Oxen" is the irregular plural of "ox". Like child/children.','intermediate',5,E,'Reading and Writing','Grammar'),
+  q('What is a subordinate clause?','A main clause,A clause that cannot stand alone and depends on a main clause,A type of noun,A complete sentence'.split(','),1,'A subordinate clause adds information but cannot stand alone: "...because she was tired."','advanced',8,E,'Reading and Writing','Grammar'),
+  q('Which word is a conjunction in: "I wanted to go, but it rained."?','wanted,but,rained,it'.split(','),1,'"But" is a coordinating conjunction joining two independent clauses.','intermediate',5,E,'Reading and Writing','Grammar'),
+  q('What does "ambiguous" mean?','Clear and precise,Having more than one possible meaning,Very long,Very short'.split(','),1,'"Ambiguous" means unclear or having multiple interpretations.','advanced',8,E,'Reading and Writing','Vocabulary'),
+  q('What is the passive form of "The chef cooked the meal"?','The meal cooked the chef,The meal was cooked by the chef,The chef is cooking the meal,The meal has been cooking'.split(','),1,'Passive: object becomes subject. "The meal was cooked by the chef."','advanced',8,E,'Reading and Writing','Grammar'),
+  q('What is personification?','Comparing two things using "like",Giving human qualities to non-human things,An extreme exaggeration,Repeating consonant sounds'.split(','),1,'Personification: "The sun smiled down on us." The sun is given the human ability to smile.','intermediate',6,E,'Reading and Writing','Comprehension'),
+  q('What is the meaning of "diligent"?','Lazy,Hardworking and careful,Rude,Clever'.split(','),1,'"Diligent" means hardworking, careful, and thorough in one\'s work.','intermediate',6,E,'Reading and Writing','Vocabulary'),
+  q('What is a topic sentence?','The last sentence of a paragraph,The sentence that introduces the main idea of a paragraph,A question sentence,A very long sentence'.split(','),1,'The topic sentence states the main idea of a paragraph — usually the first sentence.','intermediate',6,E,'Oral Language','Oral Communication'),
+  q('What does the prefix "mis-" mean in "misunderstand"?','Again,Too much,Wrongly,Before'.split(','),2,'"Mis-" means wrongly or badly. Misunderstand = to understand wrongly.','intermediate',5,E,'Reading and Writing','Vocabulary'),
+  q('Choose the correct sentence:','He don\'t like it,He doesn\'t like it,He didn\'t likes it,He doesn\'t likes it'.split(','),1,'With he/she/it, use "doesn\'t" (does not) in negative present tense.','intermediate',5,E,'Reading and Writing','Grammar'),
+  q('What type of sentence is "Close the door!"?','Declarative,Interrogative,Exclamatory,Imperative'.split(','),3,'Imperative sentences give commands or instructions. "Close the door!" is a command.','intermediate',5,E,'Reading and Writing','Grammar'),
+  q('What is an antecedent in grammar?','A type of verb,The noun that a pronoun refers to,A type of adjective,A punctuation mark'.split(','),1,'Antecedent: the noun that a pronoun replaces. In "Kofi forgot his book", Kofi is the antecedent of "his".','advanced',9,E,'Reading and Writing','Grammar'),
+  q('What does "e.g." stand for?','English grammar,Exempli gratia (for example),Every grade,Example given'.split(','),1,'"e.g." = exempli gratia (Latin) meaning "for example".','intermediate',6,E,'Reading and Writing','Vocabulary'),
+  q('Identify the type of phrase: "running very fast"','Noun phrase,Adjective phrase,Verb phrase,Adverb phrase'.split(','),2,'A verb phrase = main verb + modifiers. "Running very fast" is a verb phrase.','advanced',8,E,'Reading and Writing','Grammar'),
+  q('What is direct speech?','Reported speech,The exact words spoken by someone in quotation marks,A type of poem,A formal letter'.split(','),1,'Direct speech uses quotation marks: Kofi said, "I am hungry."','intermediate',6,E,'Reading and Writing','Grammar'),
+];
+
+// ─────────────────────────────────────────────────────────────
+// TWI (GHANAIAN LANGUAGE)
+// ─────────────────────────────────────────────────────────────
+const TW = 'Twi';
+const TWI: GESSubject = {
+  name: TW, icon: '🇬🇭', color: '#dc2626', coverColor: 'from-red-600 to-amber-600',
+  strands: [
+    {
+      name: 'Listening and Speaking', icon: '🗣️', color: '#dc2626',
+      subStrands: [
+        {
+          name: 'Oral Communication',
+          questions: [
+            q('How do you greet someone in the morning in Twi?','Maakye,Maaha,Maadwo,Mema wo akye'.split(','),0,'"Maakye" is the Twi greeting for "Good morning". Maaha=Good afternoon, Maadwo=Good evening.','beginner',1,TW,'Listening and Speaking','Oral Communication'),
+            q('How do you say "Good afternoon" in Twi?','Maakye,Maaha,Maadwo,Mema wo akye'.split(','),1,'"Maaha" means Good afternoon in Twi.','beginner',1,TW,'Listening and Speaking','Oral Communication'),
+            q('How do you say "Good evening" in Twi?','Maakye,Maaha,Maadwo,Mema wo da yie'.split(','),2,'"Maadwo" means Good evening in Twi.','beginner',1,TW,'Listening and Speaking','Oral Communication'),
+            q('How do you say "Thank you" in Twi?','Yɛda wo ase,Meda wo ase,Afehyia pa,Akwaaba'.split(','),1,'"Meda wo ase" means Thank you (I thank you). "Yɛda wo ase" = We thank you.','beginner',2,TW,'Listening and Speaking','Oral Communication'),
+            q('How do you say "Welcome" in Twi?','Yɛda wo ase,Meda wo ase,Afehyia pa,Akwaaba'.split(','),3,'"Akwaaba" means Welcome in Twi (and many Ghanaian languages).','beginner',1,TW,'Listening and Speaking','Oral Communication'),
+            q('How do you say "How are you?" in Twi?','Wo ho te sɛn?,Wo din de sɛn?,Wo fi he?,Yɛda wo ase'.split(','),0,'"Wo ho te sɛn?" means "How are you?" (How is your body?)','beginner',2,TW,'Listening and Speaking','Oral Communication'),
+            q('What is the Twi response to "Wo ho te sɛn?" (How are you?)?','Maakye,Meda wo ase,Me ho ye,Akwaaba'.split(','),2,'"Me ho ye" means "I am fine" (My body is good).','beginner',2,TW,'Listening and Speaking','Oral Communication'),
+            q('How do you say "My name is..." in Twi?','Me din de...,Wo din de...,Me fi...,Me kɔ...'.split(','),0,'"Me din de..." means "My name is..." ("My name is..." = Me din de Kofi)','beginner',2,TW,'Listening and Speaking','Oral Communication'),
+            q('How do you say "Goodbye" in Twi?','Akwaaba,Nante yie,Maakye,Meda wo ase'.split(','),1,'"Nante yie" means Goodbye/Go well in Twi.','beginner',2,TW,'Listening and Speaking','Oral Communication'),
+            q('How do you say "I love you" in Twi?','Me pe wo,Me dɔ wo,Me da wo ase,Akwaaba'.split(','),1,'"Me dɔ wo" means I love you in Twi.','beginner',3,TW,'Listening and Speaking','Oral Communication'),
+            q('What does "Medaase" mean?','Good morning,Welcome,Thank you very much,Goodbye'.split(','),2,'"Medaase" is an expression of deep gratitude meaning "Thank you" (more emphatic than Meda wo ase).','beginner',3,TW,'Listening and Speaking','Oral Communication'),
+            q('How do you say "Please" in Twi?','Mepa wo kyɛw,Meda wo ase,Akwaaba,Nante yie'.split(','),0,'"Mepa wo kyɛw" means Please in Twi (literally "I beg you").','beginner',3,TW,'Listening and Speaking','Oral Communication'),
+            q('How do you say "I am going to school" in Twi?','Me kɔ sukuu,Me ba sukuu,Me wɔ sukuu,Me fi sukuu'.split(','),0,'"Me kɔ sukuu" = I am going to school. (kɔ = go, sukuu = school)','intermediate',4,TW,'Listening and Speaking','Oral Communication'),
+            q('What does "Bra ha" mean in Twi?','Go away,Come here,Sit down,Stand up'.split(','),1,'"Bra ha" means "Come here" in Twi. (bra = come, ha = here)','beginner',3,TW,'Listening and Speaking','Oral Communication'),
+            q('How do you say "I am hungry" in Twi?','Me dɔ aduan,Kɔm de me,Me tumi adidi,Me ani agye'.split(','),1,'"Kɔm de me" means I am hungry (hunger has me).','beginner',4,TW,'Listening and Speaking','Oral Communication'),
+          ]
+        },
+        {
+          name: 'Storytelling and Folktales',
+          questions: [
+            q('What character is most famous in Akan folktales?','Lion,Kweku Ananse (the spider),Elephant,Rabbit'.split(','),1,'Kweku Ananse (Anansi the spider) is the most famous trickster character in Akan/Ghanaian folktales.','beginner',3,TW,'Listening and Speaking','Storytelling and Folktales'),
+            q('What is the Twi word for folktale/story?','Nnwonkoro,Anansesem,Asɛm,Kyerɛɛ'.split(','),1,'"Anansesem" (Ananse stories) is the Akan word for traditional folktales, originally featuring Anansi the spider.','beginner',3,TW,'Listening and Speaking','Storytelling and Folktales'),
+            q('What phrase is traditionally used to begin an Anansesem (story)?','Maakye,Akwaaba,Ananse Kokuroko,Yɛn ara yɛn asase ni'.split(','),2,'Traditional Akan storytelling begins with announcing the character. Ananse stories often start by naming Ananse.','intermediate',5,TW,'Listening and Speaking','Storytelling and Folktales'),
+            q('What is the main lesson Ananse stories typically teach?','How to farm,Moral lessons about wisdom, greed, and consequences,How to cook,History of Ghana'.split(','),1,'Ananse stories are moral tales teaching wisdom, the consequences of greed, and using cleverness responsibly.','intermediate',4,TW,'Listening and Speaking','Storytelling and Folktales'),
+          ]
+        },
+      ]
+    },
+    {
+      name: 'Reading and Writing', icon: '📖', color: '#f59e0b',
+      subStrands: [
+        {
+          name: 'Twi Alphabet and Phonics',
+          questions: [
+            q('Twi uses some special characters. Which of these is a Twi vowel not found in English?','a,e,ɛ,i'.split(','),2,'Twi uses "ɛ" (open e sound as in "bed") which is not in the standard English alphabet.','intermediate',4,TW,'Reading and Writing','Twi Alphabet and Phonics'),
+            q('Which of these is a Twi special character?','q,x,ɔ,z'.split(','),2,'"ɔ" (open o) is a special Twi/Akan vowel representing a sound between "o" and "aw".','intermediate',4,TW,'Reading and Writing','Twi Alphabet and Phonics'),
+            q('What sound does "ky" make in Twi?','k-y sound,ch sound,kw sound,gy sound'.split(','),1,'In Twi, "ky" represents a "ch"-like sound. E.g. "Kyerɛ" (teach/show).','intermediate',5,TW,'Reading and Writing','Twi Alphabet and Phonics'),
+          ]
+        },
+        {
+          name: 'Vocabulary',
+          questions: [
+            q('What is "sukuu" in English?','Market,Church,School,House'.split(','),2,'"Sukuu" = school in Twi (borrowed from English "school").','beginner',2,TW,'Reading and Writing','Vocabulary'),
+            q('What is "fie" in Twi?','School,Market,Church,House/Home'.split(','),3,'"Fie" means home or house in Twi. "Me fi" = I am from (my home).','beginner',2,TW,'Reading and Writing','Vocabulary'),
+            q('What is "aduan" in English?','Water,Food,Book,Cloth'.split(','),1,'"Aduan" means food in Twi.','beginner',2,TW,'Reading and Writing','Vocabulary'),
+            q('What is "nsuo" in Twi?','Fire,Water,Earth,Air'.split(','),1,'"Nsuo" means water in Twi.','beginner',2,TW,'Reading and Writing','Vocabulary'),
+            q('What is "papa" in Twi?','Mother,Father/good,Sister,Brother'.split(','),1,'"Papa" means father (also means good/nice) in Twi. Context determines meaning.','beginner',2,TW,'Reading and Writing','Vocabulary'),
+            q('What is "maame" in Twi?','Father,Brother,Mother,Sister'.split(','),2,'"Maame" means mother in Twi.','beginner',2,TW,'Reading and Writing','Vocabulary'),
+            q('What is "onipa" in English?','Animal,Person/human being,Plant,Thing'.split(','),1,'"Onipa" means person or human being in Twi.','beginner',3,TW,'Reading and Writing','Vocabulary'),
+            q('What does "Ɔda" mean in Twi?','She/He is eating,She/He is sleeping,She/He is going,She/He is coming'.split(','),1,'"Ɔda" means he/she is sleeping (lying down) in Twi.','intermediate',4,TW,'Reading and Writing','Vocabulary'),
+            q('What is "owuo" in English?','Birth,Sleep,Death,Dream'.split(','),2,'"Owuo" means death in Twi. "Owuo atwedee obaako nfo" is a famous Akan proverb.','intermediate',5,TW,'Reading and Writing','Vocabulary'),
+            q('What is "sunsum" in Twi?','Body,Spirit/Soul,Mind,Heart'.split(','),1,'"Sunsum" means spirit or soul in Akan belief. It is a core concept in Akan spirituality.','advanced',6,TW,'Reading and Writing','Vocabulary'),
+            q('Count to 5 in Twi: baako, mmienu, mmiɛnsa, ___','nkron,enum,nsia,nson'.split(','),1,'Twi numbers: 1=baako, 2=mmienu, 3=mmiɛnsa, 4=ɛnan, 5=enum.','beginner',3,TW,'Reading and Writing','Vocabulary'),
+            q('What is "ɛnan" in English?','3,4,5,6'.split(','),1,'"Ɛnan" is the number 4 in Twi.','beginner',3,TW,'Reading and Writing','Vocabulary'),
+            q('What does "Akwaaba" truly mean?','Goodbye,Thank you,Welcome (you are welcome to come),I love you'.split(','),2,'"Akwaaba" literally means "You are welcome to come" — the universal Ghanaian welcome.','beginner',2,TW,'Reading and Writing','Vocabulary'),
+          ]
+        },
+      ]
+    },
+    {
+      name: 'Language Use', icon: '📚', color: '#8b5cf6',
+      subStrands: [
+        {
+          name: 'Proverbs and Idioms',
+          questions: [
+            q('What does the Akan proverb "Onipa na ohia onipa" mean?','A person is better than money,A person needs a person (no one is self-sufficient),A person is strong,People cause problems'.split(','),1,'"Onipa na ohia onipa" = A person needs other people. It emphasises community and interdependence.','intermediate',5,TW,'Language Use','Proverbs and Idioms'),
+            q('"Oyerebi bi, na wanya bi" means:','He who has a wife has trouble,He who seeks something will find it,He has nothing,He found water'.split(','),1,'This Akan proverb means: He who seeks (something) will find (it). Persistence pays off.','intermediate',5,TW,'Language Use','Proverbs and Idioms'),
+            q('What is an Akan "Mmebusem"?','A type of drum,A proverb or wise saying,A folktale,A festival'.split(','),1,'"Mmebusem" is the Akan word for proverbs — traditional wise sayings encoding cultural wisdom.','intermediate',6,TW,'Language Use','Proverbs and Idioms'),
+            q('"Woforo dua pa a, na yepia wo" means:','When you climb a good tree, you are helped up|When you fall, no one helps|Good trees are tall|Climbing is dangerous'.split('|'),0,'This proverb means: When you pursue a worthy/noble goal, people will help and support you.','advanced',7,TW,'Language Use','Proverbs and Idioms'),
+            q('What does "Owuo atwedee obaako nfo" mean?','Death is painful,Death\'s ladder is not climbed by just one person (death comes to all),Only the old die,The young cannot die'.split(','),1,'This famous Akan proverb means death comes to everyone — no one is exempt from death.','advanced',7,TW,'Language Use','Proverbs and Idioms'),
+            q('The Akan symbol "Sankofa" (bird looking back) represents:','Going forward only,Learning from the past to build the future,Forgetting history,Looking for enemies'.split(','),1,'"Sankofa" (from "sɛ wo were fi na wosankofa a yenkyi") means it is not wrong to go back for what you forgot — learn from your past.','advanced',7,TW,'Language Use','Proverbs and Idioms'),
+          ]
+        },
+      ]
+    },
+  ]
+};
+
+// ─────────────────────────────────────────────────────────────
+// CREATIVE ARTS
+// ─────────────────────────────────────────────────────────────
+const CA = 'Creative Arts';
+const CREATIVE_ARTS: GESSubject = {
+  name: CA, icon: '🎨', color: '#ec4899', coverColor: 'from-pink-500 to-purple-600',
+  strands: [
+    {
+      name: 'Visual Arts', icon: '🖼️', color: '#ec4899',
+      subStrands: [
+        {
+          name: 'Drawing and Colour',
+          questions: [
+            q('What are the three primary colours?','Red, green, blue,Red, yellow, blue,Red, orange, purple,Green, purple, orange'.split(','),1,'Primary colours: Red, Yellow, Blue. They cannot be made by mixing other colours.','beginner',1,CA,'Visual Arts','Drawing and Colour'),
+            q('What do you get when you mix red and blue?','Green,Orange,Purple,Brown'.split(','),2,'Red + Blue = Purple (a secondary colour).','beginner',2,CA,'Visual Arts','Drawing and Colour'),
+            q('What do you get when you mix red and yellow?','Green,Orange,Purple,Pink'.split(','),1,'Red + Yellow = Orange.','beginner',2,CA,'Visual Arts','Drawing and Colour'),
+            q('What do you get when you mix blue and yellow?','Red,Green,Orange,Purple'.split(','),1,'Blue + Yellow = Green.','beginner',2,CA,'Visual Arts','Drawing and Colour'),
+            q('What are secondary colours?','Red, yellow, blue,Orange, green, purple,Black and white,Red and blue only'.split(','),1,'Secondary colours are made by mixing two primary colours: Orange, Green, Purple.','beginner',3,CA,'Visual Arts','Drawing and Colour'),
+            q('What is a "warm colour"?','Blue, green, purple,Red, orange, yellow,Black and white,Brown and grey'.split(','),1,'Warm colours (red, orange, yellow) evoke warmth, energy, and excitement.','intermediate',4,CA,'Visual Arts','Drawing and Colour'),
+            q('What is a "cool colour"?','Red, orange, yellow,Blue, green, purple,Gold and silver,Brown and black'.split(','),1,'Cool colours (blue, green, purple) evoke calm, peace, and coldness.','intermediate',4,CA,'Visual Arts','Drawing and Colour'),
+            q('What are complementary colours?','Colours that are similar,Colours opposite each other on the colour wheel,Dark and light shades,Warm colours only'.split(','),1,'Complementary colours are opposite on the colour wheel: red/green, blue/orange, yellow/purple.','intermediate',5,CA,'Visual Arts','Drawing and Colour'),
+            q('What is the technique of creating texture by rubbing a pencil over paper on a textured surface?','Stippling,Hatching,Frottage,Scumbling'.split(','),2,'Frottage: place paper over texture, rub with pencil to transfer the texture pattern.','intermediate',6,CA,'Visual Arts','Drawing and Colour'),
+            q('What type of lines create a feeling of movement in art?','Horizontal lines,Vertical lines,Diagonal/curved lines,Dotted lines'.split(','),2,'Diagonal and curved lines suggest movement, action, and energy in artworks.','intermediate',5,CA,'Visual Arts','Drawing and Colour'),
+            q('What is "perspective" in art?','A type of paint,Showing depth and distance on a flat surface,Using only dark colours,Drawing circles'.split(','),1,'Perspective techniques make flat drawings appear three-dimensional with depth and distance.','intermediate',6,CA,'Visual Arts','Drawing and Colour'),
+          ]
+        },
+        {
+          name: 'Ghanaian Art and Craft',
+          questions: [
+            q('What traditional Ghanaian craft uses clay to make pots and vessels?','Weaving,Pottery,Batik,Embroidery'.split(','),1,'Pottery is the craft of shaping clay into pots, bowls and vessels, common in many Ghanaian communities.','beginner',3,CA,'Visual Arts','Ghanaian Art and Craft'),
+            q('What is "Adinkra"?','A type of dance,A type of drum,Akan symbols with meanings, used in cloth and art,A type of food'.split(','),2,'Adinkra are visual symbols created by the Akan, each with a distinct meaning. Used on cloth and in art.','intermediate',5,CA,'Visual Arts','Ghanaian Art and Craft'),
+            q('What Adinkra symbol represents the importance of learning from the past?','Gye Nyame,Sankofa,Dwennimmen,Nyame Dua'.split(','),1,'Sankofa (bird looking backward) means "go back and fetch it" — learning from the past.','intermediate',5,CA,'Visual Arts','Ghanaian Art and Craft'),
+            q('What does the "Gye Nyame" Adinkra symbol represent?','Love,The supremacy of God,Courage,Wisdom'.split(','),1,'"Gye Nyame" means "Except God" — representing the omnipotence and supremacy of God.','intermediate',5,CA,'Visual Arts','Ghanaian Art and Craft'),
+            q('What is kente traditionally made of?','Wool,Cotton only,Silk or cotton strips woven together,Synthetic fibres'.split(','),2,'Traditional kente cloth is woven from silk or cotton in narrow strips sewn together.','intermediate',5,CA,'Visual Arts','Ghanaian Art and Craft'),
+            q('What is "batik"?','A type of weaving,A traditional drum,A fabric dyeing technique using wax to create patterns,A type of pottery'.split(','),2,'Batik is a wax-resist dyeing technique: apply wax to cloth, dye it, remove wax to reveal pattern.','intermediate',6,CA,'Visual Arts','Ghanaian Art and Craft'),
+            q('What material is commonly used to make beads in Ghana?','Wood only,Glass, clay, seeds and stone,Plastic only,Metal only'.split(','),1,'Ghanaian beads are made from glass (powder glass beads), clay, seeds, stone, and other materials.','beginner',4,CA,'Visual Arts','Ghanaian Art and Craft'),
+          ]
+        },
+      ]
+    },
+    {
+      name: 'Performing Arts', icon: '🎭', color: '#8b5cf6',
+      subStrands: [
+        {
+          name: 'Music',
+          questions: [
+            q('What does "rhythm" mean in music?','The speed of music,The pattern of beats and sounds in music,The loudness of music,The type of instrument'.split(','),1,'Rhythm is the pattern of beats — the regular pulse and timing of sounds in music.','beginner',2,CA,'Performing Arts','Music'),
+            q('What is "tempo" in music?','The rhythm pattern,The speed (fast or slow) of music,The volume,The melody'.split(','),1,'Tempo is how fast or slow music is played. Fast tempo = lively, slow tempo = calm.','intermediate',4,CA,'Performing Arts','Music'),
+            q('Which of these is a traditional Ghanaian instrument?','Guitar,Piano,Fontomfrom (state drum),Violin'.split(','),2,'The Fontomfrom is a set of royal/state drums used in Asante ceremonies.','intermediate',5,CA,'Performing Arts','Music'),
+            q('What is the "Atumpan" drum used for?','Dancing only,Communication and ceremonial use in Akan society,Cooking,Building'.split(','),1,'The Atumpan (talking drum) is used to communicate, send messages, and accompany ceremonies.','intermediate',5,CA,'Performing Arts','Music'),
+            q('What is a "xylophone" called in northern Ghana?','Atumpan,Gyil (Gyile),Kpanlogo,Donno'.split(','),1,'The Gyil (or Gyile) is the xylophone of the Dagara and Lobi peoples of northern Ghana.','intermediate',6,CA,'Performing Arts','Music'),
+            q('What does "pitch" mean in music?','How loud a sound is,How high or low a musical note is,The speed of music,The type of instrument'.split(','),1,'Pitch describes whether a note sounds high (like a flute) or low (like a drum bass).','intermediate',5,CA,'Performing Arts','Music'),
+            q('What is a "melody"?','A single beat,A sequence of musical notes that form a recognisable tune,Only the bass notes,The volume pattern'.split(','),1,'A melody is a sequence of notes that form a tune — what you sing or hum.','beginner',4,CA,'Performing Arts','Music'),
+            q('What are the musical notes in ascending order?','Do, Re, Mi, Fa, Sol, La, Ti,La, Sol, Fa, Mi, Re, Do, Ti,Do, Mi, Re, Fa, Sol, La, Ti,Ti, La, Sol, Fa, Mi, Re, Do'.split(','),0,'The solfège scale: Do-Re-Mi-Fa-Sol-La-Ti-Do (ascending). Used worldwide for singing.','intermediate',5,CA,'Performing Arts','Music'),
+          ]
+        },
+        {
+          name: 'Dance',
+          questions: [
+            q('Which Ghanaian dance is associated with the Akan people of the Ashanti Region?','Agbadza,Adowa,Kpanlogo,Baamaaya'.split(','),1,'Adowa is a popular Asante dance performed at funerals and celebrations using graceful hand movements.','intermediate',5,CA,'Performing Arts','Dance'),
+            q('Which dance is associated with the Ewe people?','Adowa,Kpanlogo,Agbadza,Fontomfrom'.split(','),2,'Agbadza is a recreational dance of the Ewe people of the Volta Region.','intermediate',5,CA,'Performing Arts','Dance'),
+            q('Which dance is traditionally performed by the Ga people?','Adowa,Agbadza,Kpanlogo,Baamaaya'.split(','),2,'Kpanlogo is a recreational youth dance originating from the Ga people of Greater Accra.','intermediate',5,CA,'Performing Arts','Dance'),
+            q('Which dance is associated with the people of the Northern Region?','Adowa,Agbadza,Kpanlogo,Baamaaya'.split(','),3,'Baamaaya is an acrobatic dance of the Dagbon people, performed with fast spinning movements.','intermediate',6,CA,'Performing Arts','Dance'),
+            q('What is the purpose of traditional dance in Ghanaian culture?','Entertainment only,Accompanies ceremonies, celebrations, funerals, and passes cultural values,Sport only,School activity only'.split(','),1,'Traditional dance communicates cultural values, marks life events (birth, death, harvest) and maintains heritage.','intermediate',5,CA,'Performing Arts','Dance'),
+          ]
+        },
+        {
+          name: 'Drama',
+          questions: [
+            q('What is a "protagonist" in drama?','The villain,The main character/hero of a story,A minor character,The narrator'.split(','),1,'The protagonist is the main character around whom the story revolves.','intermediate',6,CA,'Performing Arts','Drama'),
+            q('What is an "antagonist" in drama?','The hero,The character who opposes the protagonist,The narrator,A minor character'.split(','),1,'The antagonist opposes or creates conflict for the protagonist (hero). Often the villain.','intermediate',6,CA,'Performing Arts','Drama'),
+            q('What does "improvisation" mean in drama?','Performing a rehearsed script,Creating and performing without prior preparation or a script,A type of dance,Writing a play'.split(','),1,'Improvisation = creating performance spontaneously without a script. Key drama skill.','intermediate',6,CA,'Performing Arts','Drama'),
+            q('What is "mime"?','Singing without music,Performing using body movement and expression without words or sound,A type of painting,A written play'.split(','),1,'Mime is silent performance using body language, facial expressions and gestures to communicate.','intermediate',5,CA,'Performing Arts','Drama'),
+            q('What is the "setting" of a play?','The costumes worn,Where and when the story takes place,The main character,The plot ending'.split(','),1,'Setting = the time and place in which the story is set. It creates context for the action.','intermediate',6,CA,'Performing Arts','Drama'),
+          ]
+        },
+      ]
+    },
+  ]
+};
+
+// ─────────────────────────────────────────────────────────────
+// ADDITIONAL HISTORY QUESTIONS
+// ─────────────────────────────────────────────────────────────
+const HISTORY_EXTRA: GESQuestion[] = [
+  q('Which empire rose to power after the Ghana Empire declined?','Songhai Empire,Mali Empire,Oyo Empire,Benin Empire'.split(','),1,'The Mali Empire rose to dominance in West Africa after the decline of the Ghana Empire (~13th century).','advanced',7,H,'Ghanaian History','Pre-Colonial Kingdoms'),
+  q('Who founded the Asante (Ashanti) Empire?','Osei Tutu I,Yaa Asantewaa,Oti Akenten,Opoku Ware I'.split(','),0,'Osei Tutu I (reigned c.1701–1717) unified the Asante clans and founded the Asante Empire.','advanced',8,H,'Ghanaian History','Pre-Colonial Kingdoms'),
+  q('What is the "Golden Stool" (Sika Dwa) in Asante tradition?','A golden chair for the king,The sacred symbol of Asante nationhood and the soul of the Asante people,A place to store gold,A trophy for warriors'.split(','),1,'The Golden Stool is believed to contain the sunsum (soul) of the Asante nation. It descended from heaven.','advanced',7,H,'Ghanaian History','Pre-Colonial Kingdoms'),
+  q('Who was Yaa Asantewaa?','A Ghanaian president,An Asante queen mother who led the War of the Golden Stool (1900) against the British,A Ga chief,A colonial governor'.split(','),1,'Yaa Asantewaa was the Asante queen mother of Ejisu who led the last major resistance against British colonisation in 1900.','intermediate',6,H,'Ghanaian History','Pre-Colonial Kingdoms'),
+  q('What was the "War of the Golden Stool" (1900)?','A civil war between Asante clans,The Asante revolt against British demand to sit on the Golden Stool,A war over gold mining,A religious war'.split(','),1,'The British Governor demanded the Golden Stool as a seat. Yaa Asantewaa led the Asante to resist this humiliation.','advanced',8,H,'Ghanaian History','Pre-Colonial Kingdoms'),
+  q('When was the Elmina Castle built and by whom?','1441 by British,1482 by Portuguese,1600 by Dutch,1750 by French'.split(','),1,'Elmina Castle (São Jorge da Mina) was built by the Portuguese in 1482 — the first European structure in sub-Saharan Africa.','advanced',8,H,'The Slave Trade','Transatlantic Slave Trade'),
+  q('What does "UGCC" stand for in Ghana\'s history?','United Government of Coastal Communities,United Gold Coast Convention,United Ghana Cultural Committee,Upper Ghana Civil Council'.split(','),1,'UGCC = United Gold Coast Convention, founded in 1947 by J.B. Danquah to push for self-governance.','advanced',8,H,'Ghanaian History','Post-Independence'),
+  q('What was the "Convention People\'s Party" (CPP)?','A cultural organization,The political party founded by Kwame Nkrumah that led Ghana to independence,A colonial organization,A student group'.split(','),1,'Nkrumah founded the CPP in 1949 after breaking from UGCC. The CPP won the 1951 election.','advanced',8,H,'Ghanaian History','Post-Independence'),
+  q('What significant event occurred on March 6, 1957?','Ghana became a republic,Ghana gained independence from Britain,The first election,The founding of the OAU'.split(','),1,'March 6, 1957: Ghana declared independence. Nkrumah announced "Ghana, your beloved country, is free forever!"','intermediate',5,H,'Ghanaian History','Post-Independence'),
+  q('What is the "Organisation of African Unity" (OAU) now called?','African Development Bank,African Union,ECOWAS,NEPAD'.split(','),1,'The OAU (founded 1963) was renamed the African Union (AU) in 2002.','advanced',9,H,'Ghanaian History','Post-Independence'),
+  q('Who overthrew Nkrumah in 1966?','The people of Ghana,The National Liberation Council (military coup),The British government,UGCC members'.split(','),1,'The NLC (National Liberation Council) overthrew Nkrumah on 24th Feb 1966 while he was visiting Hanoi.','advanced',9,H,'Ghanaian History','Post-Independence'),
+  q('What year did Ghana become a Republic (with its own head of state)?','1957,1960,1965,1969'.split(','),1,'Ghana became a Republic on 1st July 1960, with Nkrumah becoming the first President.','intermediate',6,H,'Ghanaian History','Post-Independence'),
+  q('What is ECOWAS?','East Community of West African States,Economic Community of West African States,Education Council of West Africa,Eastern Coalition of West African Schools'.split(','),1,'ECOWAS = Economic Community of West African States, founded 1975 to promote trade and cooperation in West Africa.','intermediate',7,H,'Ghanaian History','Post-Independence'),
+  q('The first African country to gain independence in the 20th century was:','Nigeria,Ghana,Senegal,Liberia'.split(','),1,'Ghana (1957) was the first sub-Saharan African country to achieve independence from colonial rule in the 20th century.','intermediate',6,H,'Ghanaian History','Post-Independence'),
+  q('What was the main purpose of the Berlin Conference of 1884-85?','To promote trade,To divide Africa among European powers,To discuss abolition of slavery,To promote Christianity'.split(','),1,'The Berlin Conference allowed European powers to partition and colonise Africa without African representation.','advanced',9,H,'The Slave Trade','Transatlantic Slave Trade'),
+];
+
+// ─────────────────────────────────────────────────────────────
+// PATCH: Add extra questions to existing subjects
+// ─────────────────────────────────────────────────────────────
+function patchSubject(subject: GESSubject, extras: GESQuestion[]): void {
+  for (const eq of extras) {
+    let added = false;
+    for (const strand of subject.strands) {
+      if (strand.name === eq.strand) {
+        for (const ss of strand.subStrands) {
+          if (ss.name === eq.subStrand) {
+            ss.questions.push(eq);
+            added = true;
+            break;
+          }
+        }
+      }
+      if (added) break;
+    }
+    if (!added) {
+      // Find any matching strand and add to first substrand
+      for (const strand of subject.strands) {
+        if (strand.name === eq.strand) {
+          if (strand.subStrands.length > 0) {
+            strand.subStrands[0].questions.push(eq);
+          }
+          added = true;
+          break;
+        }
+      }
+    }
+  }
+}
+
+// Apply patches
+patchSubject(MATHS,   MATHS_EXTRA);
+patchSubject(SCIENCE, SCIENCE_EXTRA);
+patchSubject(ENGLISH, ENGLISH_EXTRA);
+
+// Add extra history questions
+for (const eq of HISTORY_EXTRA) {
+  for (const strand of HISTORY.strands) {
+    if (strand.name === eq.strand) {
+      for (const ss of strand.subStrands) {
+        if (ss.name === eq.subStrand) { ss.questions.push(eq); break; }
+      }
+    }
+  }
+}
+
+// Add new subjects
+GES_SUBJECTS.push(TWI, CREATIVE_ARTS);
+
+// ─────────────────────────────────────────────────────────────
+// MASSIVE EXPANSION — 700+ total questions
+// ─────────────────────────────────────────────────────────────
+
+const EXTRA_MATHS: GESQuestion[] = [
+  q('What is 6 × 7?','40,42,45,48'.split(','),1,'6 × 7 = 42. Core times table.','beginner',3,M,'Number','Operations'),
+  q('What is 8 × 9?','63,72,81,56'.split(','),1,'8 × 9 = 72.','beginner',3,M,'Number','Operations'),
+  q('What is 11 × 12?','122,132,142,112'.split(','),1,'11 × 12 = 132.','intermediate',4,M,'Number','Operations'),
+  q('What is 132 ÷ 11?','11,12,13,14'.split(','),1,'132 ÷ 11 = 12.','intermediate',4,M,'Number','Operations'),
+  q('What is 25² ?','525,625,725,425'.split(','),1,'25² = 25 × 25 = 625.','intermediate',7,M,'Number','Operations'),
+  q('What is √169?','11,13,15,17'.split(','),1,'13 × 13 = 169. √169 = 13.','intermediate',7,M,'Number','Operations'),
+  q('What is √225?','13,15,17,11'.split(','),1,'15 × 15 = 225. √225 = 15.','intermediate',7,M,'Number','Operations'),
+  q('Evaluate: 50 − 3 × 8','184,26,2,200'.split(','),1,'BODMAS: multiply first. 3×8=24. 50−24=26.','intermediate',6,M,'Number','Operations'),
+  q('Evaluate: (4 + 6) × 3','22,30,42,18'.split(','),1,'Brackets first: 4+6=10. Then 10×3=30.','beginner',4,M,'Number','Operations'),
+  q('What is 1/5 of 75?','12,15,18,20'.split(','),1,'75 ÷ 5 = 15.','beginner',4,M,'Number','Fractions'),
+  q('What is 7/8 − 3/8?','4/8,1/2,3/4,5/8'.split(','),1,'Same denominator: 7/8−3/8=4/8=1/2.','intermediate',5,M,'Number','Fractions'),
+  q('What is 1½ + 2¾?','3¾,4¼,4¾,3¼'.split(','),1,'1½=6/4, 2¾=11/4. Sum=17/4=4¼.','intermediate',6,M,'Number','Fractions'),
+  q('Express 5/8 as a decimal.','0.58,0.625,0.5,0.65'.split(','),1,'5÷8=0.625.','intermediate',6,M,'Number','Decimals and Percentages'),
+  q('What is 40% of 250?','80,90,100,110'.split(','),1,'40/100 × 250 = 100.','intermediate',6,M,'Number','Decimals and Percentages'),
+  q('Find 12½% of 400.','40,50,55,60'.split(','),1,'12.5/100 × 400 = 50.','advanced',8,M,'Number','Decimals and Percentages'),
+  q('If 8 workers complete a job in 6 days, how long for 12 workers?','3 days,4 days,5 days,6 days'.split(','),1,'Inverse proportion: 8×6=48. 48÷12=4 days.','advanced',8,M,'Number','Ratio and Proportion'),
+  q('Divide 140 in the ratio 3:4.','60 and 80,80 and 60,70 and 70,50 and 90'.split(','),0,'Total=7. 3/7×140=60, 4/7×140=80.','intermediate',7,M,'Number','Ratio and Proportion'),
+  q('What is 5 − (−3)?','2,8,−2,−8'.split(','),1,'5−(−3)=5+3=8.','intermediate',7,M,'Number','Integers and Directed Numbers'),
+  q('What is (−6) + (−4)?','2,10,−2,−10'.split(','),3,'−6+(−4)=−10.','intermediate',6,M,'Number','Integers and Directed Numbers'),
+  q('What is (−2)³?','6,8,−8,−6'.split(','),2,'(−2)³=(−2)×(−2)×(−2)=4×(−2)=−8.','advanced',8,M,'Algebra','Indices and Logarithms'),
+  q('Simplify: 4x + 2y − x + 3y','3x+5y,5x+5y,3x−y,5x−5y'.split(','),0,'4x−x=3x, 2y+3y=5y. Answer: 3x+5y.','intermediate',6,M,'Algebra','Variables and Equations'),
+  q('If y=3x−1 and x=4, find y.','10,11,12,13'.split(','),1,'y=3(4)−1=12−1=11.','intermediate',7,M,'Algebra','Variables and Equations'),
+  q('What is the gradient of y=−2x+5?','5,2,−2,−5'.split(','),2,'In y=mx+c, gradient m=−2.','advanced',9,M,'Algebra','Variables and Equations'),
+  q('Solve: x/3 + 2 = 5','x=6,x=7,x=8,x=9'.split(','),3,'x/3=3, x=9.','intermediate',7,M,'Algebra','Variables and Equations'),
+  q('The sum of two numbers is 20 and their difference is 4. Find the larger number.','10,12,14,16'.split(','),1,'x+y=20, x−y=4. 2x=24, x=12.','intermediate',8,M,'Algebra','Variables and Equations'),
+  q('Factorise: x²−9','(x+3)(x+3),(x−3)(x+3),(x−9)(x+1),(x+9)(x−1)'.split(','),1,'Difference of two squares: x²−9=(x−3)(x+3).','advanced',9,M,'Algebra','Quadratic Equations'),
+  q('What is the nth term of 4,7,10,13,...?','3n+1,4n,3n+4,n+3'.split(','),0,'Starts at 4, increases by 3. nth term=3n+1. Check: n=1:4✓, n=2:7✓.','intermediate',7,M,'Algebra','Patterns and Sequences'),
+  q('Find the sum of interior angles of a hexagon.','540°,600°,720°,810°'.split(','),2,'Sum=(n−2)×180°=(6−2)×180°=4×180°=720°.','advanced',8,M,'Geometry','Shapes'),
+  q('A circle has diameter 10cm. Find its area. (π≈3.14)','31.4cm²,78.5cm²,314cm²,15.7cm²'.split(','),1,'r=5cm. Area=πr²=3.14×25=78.5cm².','intermediate',7,M,'Geometry','Perimeter and Area'),
+  q('What is the volume of a cuboid 6cm×5cm×4cm?','60cm³,120cm³,90cm³,100cm³'.split(','),1,'V=l×w×h=6×5×4=120cm³.','intermediate',6,M,'Geometry','Volume'),
+  q('A ladder 10m long rests against a wall. The base is 6m from the wall. How high does it reach?','6m,7m,8m,9m'.split(','),2,'h²+6²=10². h²=100−36=64. h=8m.','advanced',9,M,'Geometry','Pythagoras Theorem'),
+  q('Convert 270° to radians.','3π/2,2π,π,π/2'.split(','),0,'270°=270×π/180=3π/2 radians.','advanced',9,M,'Geometry','Shapes'),
+  q('What is the mode of: 3,5,3,7,5,3,8?','5,3,7,8'.split(','),1,'3 appears 3 times — most frequent. Mode=3.','beginner',5,M,'Statistics','Data Collection and Representation'),
+  q('If P(A)=0.3, what is P(not A)?','0.3,0.7,0.6,0.4'.split(','),1,'P(not A)=1−P(A)=1−0.3=0.7.','intermediate',8,M,'Statistics','Probability'),
+  q('Two dice are rolled. P(sum=7)?','4/36,5/36,6/36,7/36'.split(','),2,'Pairs summing to 7: (1,6)(2,5)(3,4)(4,3)(5,2)(6,1)=6. P=6/36=1/6.','advanced',9,M,'Statistics','Probability'),
+  q('What is compound interest on GH₵1000 at 10% for 2 years?','GH₵200,GH₵210,GH₵220,GH₵250'.split(','),1,'Year1:1000×0.1=100→1100. Year2:1100×0.1=110. Total interest=210.','advanced',9,M,'Number','Ratio and Proportion'),
+  q('Solve: |x| = 5','x=5 only,x=−5 only,x=5 or x=−5,x=0'.split(','),2,'|x|=5 means x=+5 or x=−5.','intermediate',8,M,'Number','Integers and Directed Numbers'),
+  q('What is 0.001 as a fraction?','1/10,1/100,1/1000,1/10000'.split(','),2,'0.001=1/1000 (three decimal places).','beginner',5,M,'Number','Decimals and Percentages'),
+  q('A shopkeeper buys an item for GH₵80 and sells for GH₵100. Find the % profit.','15%,20%,25%,30%'.split(','),2,'Profit=20. % profit=(20/80)×100=25%.','intermediate',8,M,'Number','Ratio and Proportion'),
+  q('What is the mean of the first 5 natural numbers?','2,3,4,5'.split(','),1,'1+2+3+4+5=15. Mean=15÷5=3.','beginner',5,M,'Statistics','Data Collection and Representation'),
+];
+
+const EXTRA_SCIENCE: GESQuestion[] = [
+  q('What is the formula for calculating speed?','Speed=Time÷Distance,Speed=Distance÷Time,Speed=Distance×Time,Speed=Mass÷Volume'.split(','),1,'Speed=Distance÷Time. Units: km/h or m/s.','intermediate',7,S,'Energy','Forces and Motion'),
+  q('What is the chemical symbol for gold?','Go,Gd,Au,Ag'.split(','),2,'Gold\'s symbol is Au from Latin "Aurum". Silver=Ag (Argentum).','intermediate',7,S,'Materials and Matter','Mixtures and Solutions'),
+  q('What is the chemical symbol for iron?','Ir,In,Fe,Fo'.split(','),2,'Iron\'s symbol is Fe from Latin "Ferrum".','intermediate',6,S,'Materials and Matter','Mixtures and Solutions'),
+  q('Which gas is produced during photosynthesis that we breathe?','Carbon dioxide,Nitrogen,Oxygen,Hydrogen'.split(','),2,'Plants produce oxygen (O₂) as a byproduct of photosynthesis.','beginner',4,S,'Living Things and Life Processes','Plants'),
+  q('What is the largest organ of the human body?','Heart,Brain,Liver,Skin'.split(','),3,'The skin is the largest organ, covering the entire body and protecting it.','intermediate',5,S,'Living Things and Life Processes','Human Body Systems'),
+  q('How many chambers does the human heart have?','2,3,4,5'.split(','),2,'The heart has 4 chambers: right/left atrium and right/left ventricle.','intermediate',6,S,'Living Things and Life Processes','Human Body Systems'),
+  q('What is the role of the liver?','Pump blood,Filter blood, produce bile, store glycogen,Produce insulin,Absorb nutrients'.split(','),1,'The liver: produces bile, detoxifies blood, stores glycogen, produces proteins.','advanced',8,S,'Living Things and Life Processes','Human Body Systems'),
+  q('What type of joint allows rotation in all directions?','Hinge joint,Ball and socket joint,Pivot joint,Gliding joint'.split(','),1,'Ball and socket joints (shoulder, hip) allow movement in all directions.','advanced',8,S,'Living Things and Life Processes','Human Body Systems'),
+  q('What is the function of platelets in blood?','Carry oxygen,Fight infection,Clot blood to stop bleeding,Carry nutrients'.split(','),2,'Platelets (thrombocytes) help form clots to stop bleeding when you cut yourself.','intermediate',7,S,'Living Things and Life Processes','Human Body Systems'),
+  q('What is the process of water moving from the soil through a plant and evaporating from leaves?','Photosynthesis,Respiration,Transpiration,Osmosis'.split(','),2,'Transpiration: water absorbed by roots → moves up stem → evaporates from leaf stomata.','advanced',8,S,'Living Things and Life Processes','Plants'),
+  q('What are stomata?','Roots of a plant,Tiny openings on leaves for gas exchange,Seeds,Flowers'.split(','),1,'Stomata are tiny pores on leaves that open/close to allow CO₂ in and O₂/water vapour out.','intermediate',7,S,'Living Things and Life Processes','Plants'),
+  q('What is the relationship called when both organisms benefit?','Parasitism,Commensalism,Mutualism,Predation'.split(','),2,'Mutualism: both species benefit. E.g. bees pollinate flowers and get nectar.','advanced',8,S,'Living Things and Life Processes','Animals'),
+  q('What is a parasite?','An organism that makes its own food,An organism that lives on/in a host and harms it,An organism that eats both plants and animals,A decomposer'.split(','),1,'A parasite lives at the expense of its host. E.g. tapeworm, malaria parasite.','intermediate',7,S,'Living Things and Life Processes','Animals'),
+  q('What is the greenhouse effect?','Plants growing in greenhouses,Trapping of heat in the atmosphere by greenhouse gases,A type of farming,Ozone layer depletion'.split(','),1,'Greenhouse gases (CO₂, methane) trap heat in Earth\'s atmosphere, causing warming.','advanced',8,S,'Earth and Space','Weather and Climate'),
+  q('Which planet has rings around it?','Mars,Jupiter,Saturn,Venus'.split(','),2,'Saturn has the most prominent ring system, made of ice and rock particles.','beginner',5,S,'Earth and Space','Solar System'),
+  q('What is a lunar eclipse?','Moon blocks the sun,Earth\'s shadow falls on the Moon,Sun disappears,Stars align'.split(','),1,'Lunar eclipse: Earth comes between the Sun and Moon, casting shadow on the Moon.','intermediate',7,S,'Earth and Space','Solar System'),
+  q('What causes a solar eclipse?','Earth blocks the Sun,Moon comes between Earth and Sun, blocking sunlight,Stars block sunlight,Clouds block sunlight'.split(','),1,'Solar eclipse: Moon passes between Earth and Sun, blocking sunlight temporarily.','intermediate',6,S,'Earth and Space','Solar System'),
+  q('What is the name of our galaxy?','Andromeda,Milky Way,Solar System,Orion'.split(','),1,'Our solar system is part of the Milky Way galaxy — a spiral galaxy.','intermediate',6,S,'Earth and Space','Solar System'),
+  q('What is a "fulcrum"?','A type of force,The pivot point of a lever,A unit of energy,A type of machine'.split(','),1,'The fulcrum is the fixed pivot point around which a lever rotates.','intermediate',7,S,'Energy','Forces and Motion'),
+  q('What law states F=ma?','Newton\'s 1st Law,Newton\'s 2nd Law,Newton\'s 3rd Law,Ohm\'s Law'.split(','),1,'Newton\'s 2nd Law: Force = mass × acceleration (F=ma).','advanced',9,S,'Energy','Forces and Motion'),
+  q('What type of energy is stored in food?','Kinetic energy,Chemical energy,Sound energy,Nuclear energy'.split(','),1,'Food contains chemical energy stored in molecular bonds, released during respiration.','intermediate',6,S,'Energy','Forms of Energy'),
+  q('What is an electromagnet?','A permanent magnet,A magnet created by electric current through a coil,A natural rock magnet,A type of battery'.split(','),1,'Electromagnets are temporary magnets created when electric current flows through a coil of wire.','intermediate',7,S,'Energy','Forms of Energy'),
+  q('What is the function of the pancreas?','Pump blood,Produce insulin to regulate blood sugar, and digestive enzymes,Filter waste,Store bile'.split(','),1,'The pancreas produces insulin (blood sugar regulation) and digestive enzymes.','advanced',8,S,'Living Things and Life Processes','Human Body Systems'),
+  q('What is the difference between a physical and chemical change?','No difference,Physical=change in appearance, Chemical=new substance formed,Physical=permanent, Chemical=reversible,They are the same'.split(','),1,'Physical change: no new substance (e.g. melting ice). Chemical change: new substance formed (e.g. burning).','intermediate',7,S,'Materials and Matter','Mixtures and Solutions'),
+  q('What is an acid?','A substance with pH>7,A substance with pH=7,A substance with pH<7,A substance that is sweet'.split(','),2,'Acids have pH below 7. Examples: lemon juice (pH 2), vinegar (pH 3).','intermediate',7,S,'Materials and Matter','Mixtures and Solutions'),
+  q('What colour does litmus paper turn in an acid?','Blue,Purple,Red,Green'.split(','),2,'Litmus paper turns RED in acids and BLUE in alkalis.','intermediate',6,S,'Materials and Matter','Mixtures and Solutions'),
+  q('What is an alkali?','A substance with pH<7,A substance with pH=7,A substance with pH>7,All liquids'.split(','),2,'Alkalis (bases) have pH above 7. Examples: soap (pH 9), bleach (pH 12).','intermediate',7,S,'Materials and Matter','Mixtures and Solutions'),
+  q('What is the unit of electrical resistance?','Volt,Ampere,Ohm,Watt'.split(','),2,'Resistance is measured in Ohms (Ω), named after Georg Simon Ohm.','advanced',9,S,'Energy','Forms of Energy'),
+  q('What is Ohm\'s Law?','V=IR,F=ma,P=IV,E=mc²'.split(','),0,'Ohm\'s Law: Voltage=Current×Resistance (V=IR).','advanced',9,S,'Energy','Forms of Energy'),
+  q('What type of reproduction requires only one parent?','Sexual reproduction,Asexual reproduction,Pollination,Fertilisation'.split(','),1,'Asexual reproduction uses one parent. Examples: budding (yeast), binary fission (bacteria).','intermediate',7,S,'Living Things and Life Processes','Plants'),
+];
+
+const EXTRA_ENGLISH: GESQuestion[] = [
+  q('What is the plural of "mouse"?','Mouses,Mices,Mice,Mouse'.split(','),2,'"Mice" is the irregular plural of "mouse".','beginner',3,E,'Reading and Writing','Grammar'),
+  q('What is the plural of "tooth"?','Tooths,Teethes,Teeths,Teeth'.split(','),3,'"Teeth" is the irregular plural of "tooth".','beginner',3,E,'Reading and Writing','Grammar'),
+  q('Choose the correct sentence:','I seen him,I have seen him,I has seen him,I seed him'.split(','),1,'Present perfect: have/has + past participle. "I have seen him" is correct.','intermediate',6,E,'Reading and Writing','Grammar'),
+  q('What is the meaning of "nocturnal"?','Active during the day,Active during the night,Very fast,Very slow'.split(','),1,'"Nocturnal" means active at night. E.g. bats and owls are nocturnal animals.','intermediate',5,E,'Reading and Writing','Vocabulary'),
+  q('What is the meaning of "predator"?','An animal that is hunted,An animal that hunts and eats other animals,A type of plant,A very large animal'.split(','),1,'A predator hunts and kills prey for food. E.g. lion, eagle, shark.','intermediate',5,E,'Reading and Writing','Vocabulary'),
+  q('What does "transparent" mean?','Cannot be seen through,Can be seen through,Very colourful,Very heavy'.split(','),1,'"Transparent" means allowing light to pass through so objects can be clearly seen.','beginner',4,E,'Reading and Writing','Vocabulary'),
+  q('What is an "autobiography"?','A book about cars,The story of a person\'s life written by themselves,A story written by someone else,A type of poem'.split(','),1,'An autobiography is a self-written account of one\'s own life.','intermediate',6,E,'Reading and Writing','Comprehension'),
+  q('What is a "biography"?','A story written by the subject,A life story written by someone else about another person,A type of poem,A scientific report'.split(','),1,'A biography is a life story written by another person about someone else.','intermediate',6,E,'Reading and Writing','Comprehension'),
+  q('What is the purpose of a "conclusion" in an essay?','Introduce the topic,Provide evidence,Summarise the main points and give a final thought,Ask questions'.split(','),2,'A conclusion summarises the essay\'s main points and provides a final perspective.','intermediate',7,E,'Reading and Writing','Comprehension'),
+  q('What type of writing tries to convince the reader of a point of view?','Narrative,Descriptive,Persuasive,Informative'.split(','),2,'Persuasive writing uses arguments and evidence to convince the reader to agree with a viewpoint.','intermediate',7,E,'Reading and Writing','Comprehension'),
+  q('What is the difference between "affect" and "effect"?','No difference,Affect=usually a verb (to influence), Effect=usually a noun (the result),Affect=noun, Effect=verb,They are synonyms'.split(','),1,'"Affect" is usually a verb: "Rain affects crops." "Effect" is usually a noun: "The effect was good."','advanced',8,E,'Reading and Writing','Vocabulary'),
+  q('What is a "prefix"?','A word added at the end,A word added at the beginning of a root word,A type of verb,A punctuation mark'.split(','),1,'A prefix is added BEFORE a root word to change its meaning. E.g. un- in unhappy.','beginner',4,E,'Reading and Writing','Vocabulary'),
+  q('What is a "suffix"?','Added at the start of a word,Added at the end of a root word to change meaning or form,A type of noun,A punctuation mark'.split(','),1,'A suffix is added AFTER a root word. E.g. -tion in education, -ly in quickly.','beginner',5,E,'Reading and Writing','Vocabulary'),
+  q('What does "frequently" mean?','Never,Rarely,Often/many times,Once'.split(','),2,'"Frequently" means happening often or many times.','intermediate',5,E,'Reading and Writing','Vocabulary'),
+  q('Identify the type of sentence: "What time does the school open?"','Declarative,Imperative,Interrogative,Exclamatory'.split(','),2,'Interrogative sentences ask questions. They end with a question mark.','beginner',3,E,'Reading and Writing','Grammar'),
+  q('Identify the type of sentence: "What a wonderful day!"','Declarative,Imperative,Interrogative,Exclamatory'.split(','),3,'Exclamatory sentences express strong emotion. They end with an exclamation mark.','beginner',4,E,'Reading and Writing','Grammar'),
+  q('Which word correctly completes: "Neither the boys nor their teacher ___ present."','were,was,are,have been'.split(','),1,'With "neither...nor", the verb agrees with the subject nearest to it (teacher=singular). "was" is correct.','advanced',8,E,'Reading and Writing','Grammar'),
+  q('What is the gerund in: "Swimming is good exercise"?','is,good,Swimming,exercise'.split(','),2,'A gerund is a verb ending in -ing used as a noun. "Swimming" is the subject (noun) of this sentence.','advanced',8,E,'Reading and Writing','Grammar'),
+  q('What does "albeit" mean?','Therefore,Although,However,Because'.split(','),1,'"Albeit" is a formal word meaning "although" or "even though".','advanced',9,E,'Reading and Writing','Vocabulary'),
+  q('Which is correct: "There are less/fewer students today"?','Less students,Fewer students,Least students,Much students'.split(','),1,'"Fewer" is used with countable nouns (students). "Less" is used with uncountable nouns (water).','advanced',8,E,'Reading and Writing','Grammar'),
+];
+
+const EXTRA_SOCIAL: GESQuestion[] = [
+  q('What does Ghana\'s motto "Freedom and Justice" mean?','Ghana is free,Ghana values liberty and fairness for all citizens,Ghana has a good army,Ghana is rich'.split(','),1,'Ghana\'s national motto emphasises the values of freedom and justice for all people.','beginner',4,SS,'My Country Ghana','Governance and Democracy'),
+  q('What is the national anthem of Ghana?','God Save the King,Star Spangled Banner,God Bless Our Homeland Ghana,Ghana the Great'.split(','),2,'Ghana\'s national anthem is "God Bless Our Homeland Ghana".','beginner',3,SS,'My Country Ghana','Ghanaian Culture and Traditions'),
+  q('What is Ghana\'s currency?','Naira,Dollar,Ghana Cedi,Franc'.split(','),2,'Ghana\'s currency is the Ghana Cedi (GH₵), introduced in 2007.','beginner',2,SS,'My Country Ghana','Ghanaian Culture and Traditions'),
+  q('What percentage of Ghana\'s land is used for agriculture?','10%,25%,40%,57%'.split(','),2,'About 40% of Ghana\'s land area is used for agriculture, making it crucial to the economy.','intermediate',6,SS,'Environment and Resources','Natural Resources'),
+  q('Which sea is on the southern coast of Ghana?','Red Sea,Gulf of Guinea,Indian Ocean,Caribbean Sea'.split(','),1,'The Gulf of Guinea (part of the Atlantic Ocean) borders Ghana\'s southern coast.','beginner',3,SS,'My Country Ghana','Geography of Ghana'),
+  q('What are the three main branches of government in Ghana?','President, Parliament, Courts,Executive, Legislative, Judiciary,Police, Army, Navy,Cabinet, Senate, Courts'.split(','),1,'Ghana has three branches: Executive (President), Legislative (Parliament), Judiciary (Courts).','intermediate',6,SS,'My Country Ghana','Governance and Democracy'),
+  q('What is the Parliament of Ghana?','The President\'s office,The law-making body of Ghana,The army headquarters,The supreme court'.split(','),1,'Parliament is Ghana\'s legislative body, comprising 275 elected Members of Parliament (MPs).','intermediate',5,SS,'My Country Ghana','Governance and Democracy'),
+  q('What is the role of the judiciary in Ghana?','Make laws,Enforce laws,Interpret laws and settle disputes,Collect taxes'.split(','),2,'The judiciary interprets the constitution and laws, and settles legal disputes.','intermediate',6,SS,'My Country Ghana','Governance and Democracy'),
+  q('Which tribe is the largest in Ghana?','Ewe,Ga,Akan,Dagomba'.split(','),2,'The Akan people (including Asante, Fante, Akuapem) form the largest ethnic group in Ghana.','intermediate',5,SS,'My Country Ghana','Ghanaian Culture and Traditions'),
+  q('What is "chieftaincy" in Ghana?','A type of school,The traditional system of leadership by chiefs,A political party,A type of farm'.split(','),1,'Chieftaincy is Ghana\'s traditional governance system where chiefs lead their communities.','intermediate',5,SS,'My Country Ghana','Ghanaian Culture and Traditions'),
+  q('What is "Panafest"?','A food festival,Pan African Historical Theatre Festival held in Ghana,A sports competition,A music festival only'.split(','),1,'PANAFEST (Pan African Historical Theatre Festival) is a biennial festival in Ghana celebrating African heritage.','advanced',7,SS,'My Country Ghana','Ghanaian Culture and Traditions'),
+  q('What is deforestation?','Planting more trees,The clearing/removal of forests,Forest conservation,A type of farming'.split(','),1,'Deforestation is the large-scale removal of forests, often for agriculture or timber, harming ecosystems.','intermediate',6,SS,'Environment and Resources','Natural Resources'),
+  q('What is sustainable development?','Development that destroys resources,Development meeting present needs without compromising future generations\'ability to meet their needs,Fast development,Development using only technology'.split(','),1,'Sustainable development balances economic growth, social welfare, and environmental protection.','advanced',8,SS,'Environment and Resources','Natural Resources'),
+  q('Which of the following is a human right?','The right to steal,The right to education,The right to harm others,The right to ignore laws'.split(','),1,'Education is a fundamental human right recognised by the UN Convention on the Rights of the Child.','beginner',4,SS,'Personal and Social Development','Self and Family'),
+  q('What does "census" mean?','A type of election,An official count of a population,A government tax,A type of festival'.split(','),1,'A census is an official survey counting all people living in a country, collecting demographic data.','intermediate',6,SS,'My Country Ghana','Governance and Democracy'),
+  q('What is migration?','Planting crops,The movement of people from one place to another,A type of weather,A government policy'.split(','),1,'Migration is the movement of people from one region/country to another, either voluntarily or forced.','intermediate',6,SS,'Environment and Resources','Natural Resources'),
+  q('What is urbanisation?','Growth of rural areas,The process of people moving from rural to urban (city) areas,Building new roads,Planting more trees'.split(','),1,'Urbanisation: increasing proportion of population living in cities due to rural-to-urban migration.','intermediate',7,SS,'Environment and Resources','Natural Resources'),
+];
+
+const EXTRA_RME: GESQuestion[] = [
+  q('What is the Golden Rule found in most religions?','Treat others as you wish to be treated yourself,Only help your family,Be the strongest person,Collect as much wealth as possible'.split(','),0,'The Golden Rule: "Do unto others as you would have them do unto you" — found in Christianity, Islam, and other faiths.','beginner',4,R,'Moral Values','Values and Character'),
+  q('What is "empathy"?','Feeling sorry for yourself,Understanding and sharing the feelings of another person,Ignoring others,Being selfish'.split(','),1,'Empathy is the ability to understand and share the feelings of others — "putting yourself in their shoes".','intermediate',5,R,'Moral Values','Values and Character'),
+  q('What does the Bible verse "Love your neighbour as yourself" teach?','Only love family,Care for and respect all people around you,Love only people from your religion,Only love close friends'.split(','),1,'This teaching encourages treating everyone — regardless of background — with care, respect and kindness.','beginner',3,R,'Religious Knowledge','Christianity'),
+  q('What is "Zakat" in Islam?','Prayer,Fasting,Compulsory charity (giving 2.5% of wealth to the poor),Pilgrimage to Mecca'.split(','),2,'Zakat is one of the Five Pillars of Islam — giving 2.5% of one\'s annual savings to those in need.','intermediate',6,R,'Religious Knowledge','Islam'),
+  q('What is "Hajj" in Islam?','Daily prayer,Fasting in Ramadan,Pilgrimage to Mecca (required once in a lifetime),Giving to the poor'.split(','),2,'Hajj is the annual pilgrimage to Mecca that every able Muslim must perform at least once.','intermediate',6,R,'Religious Knowledge','Islam'),
+  q('What are the Ten Commandments?','Ten prayers,Ten rules given by God to Moses on Mount Sinai,Ten chapters of the Bible,Ten disciples of Jesus'.split(','),1,'God gave Moses the Ten Commandments on Mount Sinai — rules for moral and religious conduct.','intermediate',5,R,'Religious Knowledge','Christianity'),
+  q('What is a mosque?','A Christian church,A place of worship for Muslims,A Jewish temple,A Hindu temple'.split(','),1,'A mosque (masjid) is a place of worship for Muslims where they perform Salah (prayer).','beginner',3,R,'Religious Knowledge','Islam'),
+  q('What is a church?','A Muslim place of worship,A place of worship for Christians,A Jewish synagogue,A Buddhist temple'.split(','),1,'A church is a place of worship and community for Christians.','beginner',2,R,'Religious Knowledge','Christianity'),
+  q('What does "Eid al-Fitr" celebrate?','Birth of Prophet Muhammad,End of the Ramadan fast,Hajj pilgrimage,New Year'.split(','),1,'Eid al-Fitr is the "Festival of Breaking the Fast" celebrated at the end of Ramadan.','intermediate',5,R,'Religious Knowledge','Islam'),
+  q('What does "peer pressure" mean?','Pressure from teachers,Influence from friends/peers to do something,Pressure from parents,School work pressure'.split(','),1,'Peer pressure is when friends or people your age influence you to behave in certain ways.','intermediate',5,R,'Moral Values','Values and Character'),
+  q('What is "abstinence" as a moral value?','Eating less,Choosing to refrain from something, especially harmful behaviours,Spending more money,Being very active'.split(','),1,'Abstinence means voluntarily refraining from certain behaviours — especially harmful or inappropriate ones.','intermediate',6,R,'Moral Values','Values and Character'),
+  q('What is meant by "stewardship" in religion?','Being a leader,Responsible care and management of resources entrusted to us by God,Collecting money,Building churches'.split(','),1,'Stewardship: managing God\'s creation (earth, resources) responsibly for the benefit of all.','advanced',7,R,'Moral Values','Values and Character'),
+];
+
+const EXTRA_COMPUTING: GESQuestion[] = [
+  q('What does "URL" stand for?','Universal Resource Link,Uniform Resource Locator,Universal Remote Location,United Resource Language'.split(','),1,'URL=Uniform Resource Locator — the address of a webpage, e.g. https://www.google.com.','intermediate',6,C,'Computer Fundamentals','Internet and Safety'),
+  q('What does "HTML" stand for?','High Text Machine Language,HyperText Markup Language,Hyper Transfer Markup Language,High Transfer Machine Language'.split(','),1,'HTML=HyperText Markup Language — the standard language for creating webpages.','intermediate',7,C,'Computer Fundamentals','Internet and Safety'),
+  q('What is a "browser"?','A type of virus,Software used to access and view websites on the internet,A type of keyboard,A file storage system'.split(','),1,'A browser (Chrome, Firefox, Edge) is software that allows you to access and navigate the World Wide Web.','beginner',5,C,'Computer Fundamentals','Internet and Safety'),
+  q('What does "Wi-Fi" allow you to do?','Type faster,Connect to the internet wirelessly,Store more data,Print documents'.split(','),1,'Wi-Fi (Wireless Fidelity) allows devices to connect to the internet without physical cables.','beginner',5,C,'Computer Fundamentals','Internet and Safety'),
+  q('What is "Bluetooth"?','A type of virus,A wireless technology for short-range data exchange between devices,A social media platform,A programming language'.split(','),1,'Bluetooth is a short-range wireless technology for connecting devices like phones, speakers, headphones.','intermediate',6,C,'Computer Fundamentals','Internet and Safety'),
+  q('What is a "database"?','A type of virus,An organised collection of structured data,A programming language,A type of hardware'.split(','),1,'A database is an organised, structured collection of data stored electronically, e.g. school records.','intermediate',7,C,'Computer Fundamentals','Hardware and Software'),
+  q('What does "GUI" stand for?','General User Input,Graphical User Interface,Global Utility Interface,Group User Information'.split(','),1,'GUI=Graphical User Interface — the visual way users interact with computers through icons and windows.','intermediate',7,C,'Computer Fundamentals','Hardware and Software'),
+  q('What is "cloud computing"?','Computing using cloud shapes,Storing and accessing data and programs over the internet instead of locally,A type of weather app,Computing outdoors'.split(','),1,'Cloud computing uses remote servers on the internet to store, manage and process data.','advanced',8,C,'Computer Fundamentals','Hardware and Software'),
+  q('What is "malware"?','Good software,Malicious software designed to harm computers or steal data,A type of hardware,A programming concept'.split(','),1,'Malware (malicious software) includes viruses, ransomware, spyware designed to damage or unauthorised access systems.','advanced',8,C,'Computer Fundamentals','Internet and Safety'),
+  q('What does "Ctrl+A" do?','Copy,Paste,Select all,Undo'.split(','),2,'Ctrl+A selects ALL content in the current document or window.','beginner',5,C,'Software Applications','Word Processing'),
+  q('In a spreadsheet, what is a "formula"?','A type of chart,A mathematical expression used to calculate values in cells,A type of table,A column heading'.split(','),1,'Spreadsheet formulas (starting with =) perform calculations. E.g. =SUM(A1:A5) adds values in A1 to A5.','intermediate',7,C,'Software Applications','Word Processing'),
+  q('What is "binary code"?','A code with many digits,A number system using only 0s and 1s that computers use,A type of encryption,A programming language'.split(','),1,'Binary (base-2) uses only 0 and 1. All computer data is ultimately stored as binary.','advanced',8,C,'Programming','Algorithms and Problem Solving'),
+  q('What is "debugging" in programming?','Writing new code,Finding and fixing errors (bugs) in a program,Deleting old programs,Testing a program for the first time'.split(','),1,'Debugging is the process of finding, analysing and fixing errors in computer programs.','intermediate',7,C,'Programming','Algorithms and Problem Solving'),
+  q('What is a "variable" in programming?','A type of loop,A named storage location that holds a value,A type of function,An error in code'.split(','),1,'A variable stores data that can change. E.g. score=0 (score is the variable holding value 0).','intermediate',6,C,'Programming','Algorithms and Problem Solving'),
+  q('What does "input" mean in computing?','Data that comes out of a computer,Data that goes INTO a computer,The process of calculation,Displaying results'.split(','),0,'Input is data entered into a computer. Output is data produced by a computer.','beginner',4,C,'Computer Fundamentals','Hardware and Software'),
+];
+
+const EXTRA_TWI: GESQuestion[] = [
+  q('How do you say "I am going home" in Twi?','Me kɔ fie,Me ba fie,Me wɔ fie,Me fi fie'.split(','),0,'"Me kɔ fie" = I am going home. (kɔ=go, fie=home)','intermediate',4,TW,'Reading and Writing','Vocabulary'),
+  q('What is "aduane" in English?','Water,Cloth,Food,Book'.split(','),2,'"Aduane" (also "aduan") means food in Twi.','beginner',2,TW,'Reading and Writing','Vocabulary'),
+  q('How do you count to 10 in Twi? What comes after "enum" (5)?','baako,nsia,ɛnan,mmienu'.split(','),1,'Twi numbers: 1=baako, 2=mmienu, 3=mmiɛnsa, 4=ɛnan, 5=enum, 6=nsia.','beginner',3,TW,'Reading and Writing','Vocabulary'),
+  q('What is "ewiem" in English?','Sky/heaven,Earth,Water,Fire'.split(','),0,'"Ewiem" means sky or heaven in Twi.','intermediate',5,TW,'Reading and Writing','Vocabulary'),
+  q('What does "Me wɔ Ghana" mean?','I am from Ghana,I love Ghana,I am going to Ghana,Ghana is beautiful'.split(','),0,'"Me wɔ Ghana" = I am in Ghana / I am from Ghana.','intermediate',4,TW,'Reading and Writing','Vocabulary'),
+  q('What is "akokᴐ" in English?','Cow,Goat,Chicken,Dog'.split(','),2,'"Akokᴐ" means chicken/fowl in Twi.','beginner',3,TW,'Reading and Writing','Vocabulary'),
+  q('What is "krataa" in English?','Pen,Paper/book/letter,Bag,Chair'.split(','),1,'"Krataa" means paper, book or letter in Twi.','beginner',3,TW,'Reading and Writing','Vocabulary'),
+  q('What is "abrofosem" (Twi for "English language")?','French,English,Mathematics,Science'.split(','),1,'"Abrofosem" literally means "the language of Europeans/English people" referring to English language.','intermediate',5,TW,'Reading and Writing','Vocabulary'),
+  q('How do you say "I don\'t understand" in Twi?','Me nnim,Me ntε,Me ntie,Me mfa'.split(','),1,'"Me ntε" means I don\'t understand in Twi.','intermediate',5,TW,'Listening and Speaking','Oral Communication'),
+  q('What does "Onyame nhyira wo" mean?','Good morning,God bless you,Thank you,Goodbye'.split(','),1,'"Onyame nhyira wo" = God bless you. (Onyame=God, nhyira=bless, wo=you)','intermediate',5,TW,'Listening and Speaking','Oral Communication'),
+  q('What is "nnawotwe" in English?','Day,Week,Month,Year'.split(','),1,'"Nnawotwe" means a week (7 days) in Twi.','intermediate',5,TW,'Reading and Writing','Vocabulary'),
+  q('How do you say "today" in Twi?','Nnora,Ɛnnɛ,Ɔkyena,Awia'.split(','),1,'"Ɛnnɛ" means today. Nnora=yesterday, Ɔkyena=tomorrow.','intermediate',4,TW,'Reading and Writing','Vocabulary'),
+  q('What does "Ɔkyena" mean?','Yesterday,Today,Tomorrow,Last week'.split(','),2,'"Ɔkyena" means tomorrow in Twi.','beginner',4,TW,'Reading and Writing','Vocabulary'),
+  q('What is "nnora" in English?','Today,Yesterday,Tomorrow,Last year'.split(','),1,'"Nnora" means yesterday in Twi.','beginner',4,TW,'Reading and Writing','Vocabulary'),
+  q('How do you say "The food is good" in Twi?','Aduan no ye fe,Aduan no ye,Aduan no yɛ,Aduan no yɛ dɛ'.split(','),3,'"Aduan no yɛ dɛ" = The food is good/delicious. (dɛ=sweet/delicious)','intermediate',5,TW,'Reading and Writing','Vocabulary'),
+  q('What does the Twi phrase "obra ye ntɛm" mean?','Life is long,Life is fast/short (life passes quickly),Life is good,Life is hard'.split(','),1,'"Obra ye ntɛm" — life passes quickly, meaning we should use our time wisely.','advanced',7,TW,'Language Use','Proverbs and Idioms'),
+];
+
+const EXTRA_CREATIVE: GESQuestion[] = [
+  q('What are the three dimensions (3D) in art?','Height, width, depth,Height, weight, colour,Shape, size, colour,Line, texture, pattern'.split(','),0,'3D art has height, width and depth — it exists in physical space, unlike 2D art (flat).','intermediate',5,CA,'Visual Arts','Drawing and Colour'),
+  q('What is "symmetry" in art?','Only one colour,When both sides of an image are mirror images of each other,A type of painting,Using only circles'.split(','),1,'Symmetry: when a shape/design is identical on both sides of a dividing line. E.g. butterfly wings.','beginner',4,CA,'Visual Arts','Drawing and Colour'),
+  q('What is "proportion" in art?','The colour of objects,The relative size of different parts in a composition,The texture of a surface,The type of paint used'.split(','),1,'Proportion describes the size relationship between different elements in an artwork.','intermediate',6,CA,'Visual Arts','Drawing and Colour'),
+  q('What is a "collage"?','A type of dance,Artwork made by sticking various materials (paper, fabric, photos) onto a surface,A type of music,A poetry style'.split(','),1,'A collage assembles different materials — magazine clippings, fabric, photos — to create an artwork.','beginner',4,CA,'Visual Arts','Ghanaian Art and Craft'),
+  q('What is "weaving"?','Melting materials together,Interlacing threads/strips to create cloth or baskets,A type of painting,Drawing patterns'.split(','),1,'Weaving interlaces horizontal and vertical threads/strips to create cloth (like kente) or baskets.','beginner',4,CA,'Visual Arts','Ghanaian Art and Craft'),
+  q('What type of art is "sculpture"?','2D art on flat surface,3D art created by shaping materials like clay, stone or wood,A type of painting,Digital art'.split(','),1,'Sculpture is three-dimensional art created by carving, modelling or assembling materials.','beginner',5,CA,'Visual Arts','Ghanaian Art and Craft'),
+  q('What are "earth colours"?','Bright neon colours,Colours derived from natural minerals: ochre, sienna, umber,Only black and white,Primary colours only'.split(','),1,'Earth colours (ochre, sienna, raw umber) come from natural mineral pigments — warm, muted tones.','advanced',7,CA,'Visual Arts','Drawing and Colour'),
+  q('What is "mosaic" art?','A type of dance,Artwork made of small pieces of glass, stone or tile,A painting technique,A printing technique'.split(','),1,'Mosaics create images using small coloured pieces (tesserae) of glass, stone, or ceramic tiles.','intermediate',6,CA,'Visual Arts','Ghanaian Art and Craft'),
+  q('What is the "Sankofa" bird a symbol of?','Danger,Looking back to learn from the past to build the future,Victory,Sadness'.split(','),1,'Sankofa (looking backward) = learn from the past. "Se wo were fi na wosankofa a yenkyi."','intermediate',5,CA,'Visual Arts','Ghanaian Art and Craft'),
+  q('What does "Dwennimmen" Adinkra symbol represent?','Wisdom and learning,Strength with humility (ram\'s horns),God\'s protection,Love'.split(','),1,'"Dwennimmen" (ram\'s horns) symbolises strength combined with humility and wisdom.','advanced',7,CA,'Visual Arts','Ghanaian Art and Craft'),
+  q('What is "harmony" in music?','Playing only one note,Different notes played together to create a pleasing sound,The speed of music,The loudness of music'.split(','),1,'Harmony is when two or more different notes are played/sung at the same time to create a pleasing sound.','intermediate',6,CA,'Performing Arts','Music'),
+  q('What is a "chorus" in a song?','The first verse,The repeated section of a song with the main message,The ending,The introduction'.split(','),1,'The chorus is the repeated section of a song that usually contains the main theme/message.','beginner',4,CA,'Performing Arts','Music'),
+  q('What is "dynamics" in music?','The speed of music,The variation in loudness (loud and soft) in music,The rhythm pattern,The type of instrument'.split(','),1,'Dynamics refers to the variation in volume — forte (loud), piano (soft), crescendo (getting louder).','intermediate',6,CA,'Performing Arts','Music'),
+  q('What does "forte" mean in music?','Play softly,Play loudly,Play fast,Play slowly'.split(','),1,'"Forte" (f) means loud in musical notation. "Piano" (p) means soft.','intermediate',6,CA,'Performing Arts','Music'),
+  q('What is "improvisation" in music?','Only following a written score,Creating and performing music spontaneously without preparation,A type of instrument,A music theory concept'.split(','),1,'Musical improvisation is creating music in the moment without preparation — key in jazz and traditional African music.','intermediate',7,CA,'Performing Arts','Music'),
+];
+
+const EXTRA_HISTORY2: GESQuestion[] = [
+  q('What is "colonialism"?','A type of farming,When a powerful country takes control of another territory and its people,A type of trade,A religious movement'.split(','),1,'Colonialism: a powerful nation extends control over other territories, exploiting their resources and people.','intermediate',7,H,'Ghanaian History','Colonial Period'),
+  q('What did Ghana gain from the Akosombo Dam?','Gold mining,Cheap hydroelectric power for industrialisation,Better roads,More farmland'.split(','),1,'The Akosombo Dam (completed 1965) provided hydroelectric power crucial for Ghana\'s industrialisation under Nkrumah.','advanced',8,H,'Ghanaian History','Post-Independence'),
+  q('What is the "Fourth Republic" of Ghana?','Ghana\'s first government,The current constitutional government of Ghana established in 1993,A military regime,A colonial government'.split(','),1,'Ghana\'s Fourth Republic began in January 1993, restoring multiparty democracy after years of military rule.','advanced',9,H,'Ghanaian History','Post-Independence'),
+  q('What is the significance of the Christiansborg Castle (Osu Castle) in Ghana?','It is a shopping centre,It was the seat of government and a former slave trading post,It is a museum only,It is a school'.split(','),1,'Christiansborg Castle (Osu Castle) in Accra was a slave fort, colonial headquarters, and Ghana\'s seat of government.','advanced',8,H,'The Slave Trade','Transatlantic Slave Trade'),
+  q('What was the "Triangle Trade"?','A trade route between three African countries,Trade between Europe, Africa, and the Americas: goods→Africa, slaves→Americas, raw materials→Europe,A trade route for gold only,A modern shipping route'.split(','),1,'The Triangle Trade: Europeans brought goods to Africa, traded for enslaved Africans sent to Americas, brought back raw materials.','advanced',8,H,'The Slave Trade','Transatlantic Slave Trade'),
+  q('What major change did the 1992 Constitution bring to Ghana?','Military rule,Multi-party democracy, free elections, and protection of human rights,One-party system,End of chieftaincy'.split(','),1,'The 1992 Constitution established Ghana\'s Fourth Republic with multi-party democracy, separation of powers, and guaranteed rights.','advanced',9,H,'Ghanaian History','Post-Independence'),
+  q('Who is considered the "father of African nationalism"?','Nelson Mandela,Jomo Kenyatta,Kwame Nkrumah,Julius Nyerere'.split(','),2,'Kwame Nkrumah championed pan-Africanism and was instrumental in the formation of the OAU.','advanced',9,H,'Ghanaian History','Post-Independence'),
+  q('What was the "Scramble for Africa"?','African athletes competing,The rapid colonisation of Africa by European powers 1880s–1914,Trading among African nations,A civil war in Africa'.split(','),1,'The Scramble for Africa: European powers rapidly colonised almost all of Africa between 1880–1914, mainly after the Berlin Conference.','advanced',9,H,'The Slave Trade','Transatlantic Slave Trade'),
+];
+
+// Apply all extras
+const allExtras: [GESSubject, GESQuestion[]][] = [
+  [MATHS, EXTRA_MATHS],
+  [SCIENCE, EXTRA_SCIENCE],
+  [ENGLISH, EXTRA_ENGLISH],
+  [SOCIAL, EXTRA_SOCIAL],
+  [RME, EXTRA_RME],
+  [COMPUTING, EXTRA_COMPUTING],
+  [TWI, EXTRA_TWI],
+  [CREATIVE_ARTS, EXTRA_CREATIVE],
+  [HISTORY, EXTRA_HISTORY2],
+];
+
+for (const [subj, extras] of allExtras) {
+  patchSubject(subj, extras);
+}
